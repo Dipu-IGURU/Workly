@@ -1,8 +1,8 @@
-git clone <your git url>
+git clone <fill the github https url>
 
 
 # Step 2: Navigate to the project directory.
-cd <your project name>
+cd <Go to the Workly>
 
 # Step 3: Install the necessary dependencies.
 npm i
