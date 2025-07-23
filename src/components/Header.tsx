@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Search, ChevronDown, Menu } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,9 +113,11 @@ const Header = () => {
               <Button variant="outline" className="hidden lg:inline-flex text-sm">
                 Upload your CV
               </Button>
-              <Button variant="outline" size="sm" className="text-sm">
-                Login / Register
-              </Button>
+              <Link to="/login">
+                <Button variant="outline" size="sm" className="text-sm">
+                  Login / Register
+                </Button>
+              </Link>
               <Button size="sm" className="text-sm">
                 Job Post
               </Button>
