@@ -12,7 +12,7 @@ const Footer = () => {
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-xl">S</span>
               </div>
-              <span className="ml-2 text-xl font-bold">Superio</span>
+              <span className="ml-2 text-xl font-bold">Workly</span>
             </div>
             <p className="text-background/70 mb-4">
               Call now: <span className="text-background font-medium">(319) 555-0115</span>
@@ -58,7 +58,7 @@ const Footer = () => {
         <div className="border-t border-background/20 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-background/70 text-sm">
-              © 2024 Superio. All Rights Reserved.
+              © 2024 Workly. All Rights Reserved.
             </p>
             <div className="flex space-x-4 mt-4 md:mt-0">
               <Button variant="ghost" size="sm" className="text-background/70 hover:text-background hover:bg-background/10">
