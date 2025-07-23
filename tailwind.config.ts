@@ -52,6 +52,13 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				'hero-bg': 'hsl(var(--hero-bg))',
+				'hero-accent': 'hsl(var(--hero-accent))',
+				'category-bg': 'hsl(var(--category-bg))',
+				'job-card': 'hsl(var(--job-card))',
+				'badge-blue': 'hsl(var(--badge-blue))',
+				'badge-green': 'hsl(var(--badge-green))',
+				'text-light': 'hsl(var(--text-light))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
