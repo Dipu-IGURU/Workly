@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DashboardLayout from "@/components/DashboardLayout";
+// DashboardLayout is now handled by the router
 
 const MyProfile = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -53,7 +53,7 @@ const MyProfile = () => {
   };
 
   return (
-    <DashboardLayout>
+    <div>
       <h1 className="text-3xl font-bold mb-2">My Profile!</h1>
       <p className="text-gray-600 mb-8">Ready to jump back in?</p>
 
@@ -343,7 +343,7 @@ const MyProfile = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </DashboardLayout>
+    </div>
   );
 };
 

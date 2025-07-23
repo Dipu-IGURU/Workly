@@ -16,7 +16,7 @@ import {
   Briefcase
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import DashboardLayout from "@/components/DashboardLayout";
+// DashboardLayout is now handled by the router
 import { cn } from "@/lib/utils";
 
 interface UserData {
@@ -225,26 +225,22 @@ const UserDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading your dashboard...</p>
-          </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading your dashboard...</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <p className="text-muted-foreground">No user data available.</p>
-          </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-muted-foreground">No user data available.</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
@@ -270,7 +266,7 @@ const UserDashboard: React.FC = () => {
   };
 
   return (
-    <DashboardLayout>
+    <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
         <Button variant="outline" size="sm" className="ml-4">
@@ -425,7 +421,7 @@ const UserDashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-    </DashboardLayout>
+    </div>
   );
 };
 

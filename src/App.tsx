@@ -10,7 +10,7 @@ import UserDashboard from "./pages/UserDashboard";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import MyProfile from "./pages/MyProfile";
 import NotFound from "./pages/NotFound";
-import DashboardLayout from "./components/DashboardLayout";
+import DashboardLayout from "./components/layout/DashboardLayout";
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
