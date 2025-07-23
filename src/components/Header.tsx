@@ -108,14 +108,14 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center space-x-2">
-            <div className="hidden sm:flex items-center space-x-4">
-              <Button variant="outline" className="hidden lg:inline-flex">
+            <div className="hidden sm:flex items-center space-x-3">
+              <Button variant="outline" className="hidden lg:inline-flex text-sm">
                 Upload your CV
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="text-sm">
                 Login / Register
               </Button>
-              <Button size="sm">
+              <Button size="sm" className="text-sm">
                 Job Post
               </Button>
             </div>
@@ -127,9 +127,9 @@ const Header = () => {
                   <Menu className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <nav className="flex flex-col space-y-4">
-                  <div className="flex items-center space-y-2 mb-6">
+              <SheetContent side="right" className="w-[300px] sm:w-[400px] overflow-y-auto">
+                <nav className="flex flex-col h-full">
+                  <div className="flex items-center mb-6 pb-4 border-b border-border">
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                       <span className="text-primary-foreground font-bold">W</span>
                     </div>
@@ -137,76 +137,76 @@ const Header = () => {
                   </div>
 
                   {/* Mobile Navigation Links */}
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">Home</h3>
-                      <div className="space-y-2 pl-4">
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Home Default</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Home Alternative</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Home Creative</p>
+                  <div className="flex-1 space-y-4 overflow-y-auto">
+                    <div className="pb-2">
+                      <h3 className="font-semibold text-foreground mb-3 text-base">Home</h3>
+                      <div className="space-y-3 pl-3">
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Home Default</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Home Alternative</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Home Creative</p>
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">Find Jobs</h3>
-                      <div className="space-y-2 pl-4">
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Job List</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Job Grid</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Job Details</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Advanced Search</p>
+                    <div className="pb-2">
+                      <h3 className="font-semibold text-foreground mb-3 text-base">Find Jobs</h3>
+                      <div className="space-y-3 pl-3">
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Job List</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Job Grid</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Job Details</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Advanced Search</p>
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">Employers</h3>
-                      <div className="space-y-2 pl-4">
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Browse Employers</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Employer Dashboard</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Submit Job</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Employer Profile</p>
+                    <div className="pb-2">
+                      <h3 className="font-semibold text-foreground mb-3 text-base">Employers</h3>
+                      <div className="space-y-3 pl-3">
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Browse Employers</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Employer Dashboard</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Submit Job</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Employer Profile</p>
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">Candidates</h3>
-                      <div className="space-y-2 pl-4">
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Browse Candidates</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Candidate Dashboard</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Candidate Profile</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Submit Resume</p>
+                    <div className="pb-2">
+                      <h3 className="font-semibold text-foreground mb-3 text-base">Candidates</h3>
+                      <div className="space-y-3 pl-3">
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Browse Candidates</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Candidate Dashboard</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Candidate Profile</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Submit Resume</p>
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">Blog</h3>
-                      <div className="space-y-2 pl-4">
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Blog List</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Blog Grid</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Blog Details</p>
+                    <div className="pb-2">
+                      <h3 className="font-semibold text-foreground mb-3 text-base">Blog</h3>
+                      <div className="space-y-3 pl-3">
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Blog List</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Blog Grid</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Blog Details</p>
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">Pages</h3>
-                      <div className="space-y-2 pl-4">
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">About Us</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Contact</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">FAQ</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Terms & Conditions</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary">Privacy Policy</p>
+                    <div className="pb-2">
+                      <h3 className="font-semibold text-foreground mb-3 text-base">Pages</h3>
+                      <div className="space-y-3 pl-3">
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">About Us</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Contact</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">FAQ</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Terms & Conditions</p>
+                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Privacy Policy</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Mobile Action Buttons */}
-                  <div className="space-y-3 pt-6 border-t border-border">
-                    <Button variant="outline" className="w-full">
+                  <div className="mt-auto pt-6 border-t border-border space-y-3 flex-shrink-0">
+                    <Button variant="outline" className="w-full h-11 text-sm">
                       Upload your CV
                     </Button>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full h-11 text-sm">
                       Login / Register
                     </Button>
-                    <Button className="w-full">
+                    <Button className="w-full h-11 text-sm">
                       Job Post
                     </Button>
                   </div>
