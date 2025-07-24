@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Briefcase, Users, FileText, Settings, LogOut, Plus, Eye, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { JobPostForm } from "@/components/JobPostForm";
 
 interface UserData {
   id: string;
@@ -234,10 +235,15 @@ const RecruiterDashboard = () => {
                       <h2 className="text-2xl font-bold">Job Posts</h2>
                       <p className="text-muted-foreground">Manage your job postings</p>
                     </div>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Post New Job
-                    </Button>
+                    <JobPostForm onSuccess={() => {
+                      // Refresh jobs list after successful post
+                      // This will be implemented when we fetch jobs
+                    }}>
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Post New Job
+                      </Button>
+                    </JobPostForm>
                   </div>
                   <Card>
                     <CardContent className="p-6">

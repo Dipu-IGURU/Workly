@@ -42,11 +42,22 @@ const userSchema = new mongoose.Schema({
   },
   profile: {
     avatar: String,
-    bio: String,
-    skills: [String],
+    fullName: String,
+    jobTitle: String,
+    email: String,
+    phone: String,
+    website: String,
+    currentSalary: String,
     experience: String,
-    location: String,
-    phone: String
+    age: String,
+    education: String,
+    description: String,
+    facebook: String,
+    twitter: String,
+    linkedin: String,
+    country: String,
+    city: String,
+    address: String
   },
   createdAt: {
     type: Date,

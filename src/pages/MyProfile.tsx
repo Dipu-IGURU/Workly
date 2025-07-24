@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { profileApi } from '@/lib/api';
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,9 +49,76 @@ const MyProfile = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load profile data on component mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        const result = await profileApi.getProfile();
+        if (result.success && result.profile) {
+          setFormData(prev => ({
+            ...prev,
+            ...result.profile
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        toast.error('Failed to load profile data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    
+    try {
+      setIsLoading(true);
+      // Validate required fields
+      if (!formData.fullName || !formData.email) {
+        throw new Error('Full name and email are required');
+      }
+      
+      // Ensure email is in lowercase and trimmed
+      const updatedFormData = {
+        ...formData,
+        email: formData.email?.toLowerCase().trim()
+      };
+      
+      const result = await profileApi.updateProfile(updatedFormData);
+      
+      if (result.success) {
+        toast.success('Profile updated successfully!');
+        // Update the form data with the server response to ensure consistency
+        if (result.profile) {
+          setFormData(prev => ({
+            ...prev,
+            ...result.profile
+          }));
+        }
+      } else {
+        throw new Error(result.message || 'Failed to update profile');
+      }
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      // Show more specific error messages based on error type
+      if (error.message.includes('NetworkError')) {
+        toast.error('Unable to connect to the server. Please check your internet connection.');
+      } else if (error.message.includes('401')) {
+        toast.error('Session expired. Please log in again.');
+        // Optionally redirect to login
+        navigate('/login');
+      } else {
+        toast.error(error.message || 'Failed to update profile. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -100,9 +169,10 @@ const MyProfile = () => {
                       <Input
                         id="fullName"
                         name="fullName"
-                        value={formData.fullName}
+                        value={formData.fullName || ''}
                         onChange={handleChange}
                         required
+                        disabled={isLoading}
                       />
                     </div>
 
@@ -112,10 +182,11 @@ const MyProfile = () => {
                         <Input
                           id="jobTitle"
                           name="jobTitle"
-                          value={formData.jobTitle}
+                          value={formData.jobTitle || ''}
                           onChange={handleChange}
                           placeholder="e.g. Designer"
                           required
+                          disabled={isLoading}
                         />
                       </div>
                     </div>
@@ -126,9 +197,10 @@ const MyProfile = () => {
                         id="email"
                         name="email"
                         type="email"
-                        value={formData.email}
+                        value={formData.email || ''}
                         onChange={handleChange}
                         required
+                        disabled={isLoading}
                       />
                     </div>
 
@@ -138,8 +210,9 @@ const MyProfile = () => {
                         id="phone"
                         name="phone"
                         type="tel"
-                        value={formData.phone}
+                        value={formData.phone || ''}
                         onChange={handleChange}
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -148,7 +221,11 @@ const MyProfile = () => {
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="experience">Experience</Label>
-                      <Select onValueChange={(value) => handleSelectChange('experience', value)}>
+                      <Select 
+                        value={formData.experience || ''}
+                        onValueChange={(value) => handleSelectChange('experience', value)}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select experience" />
                         </SelectTrigger>
@@ -164,7 +241,11 @@ const MyProfile = () => {
 
                     <div>
                       <Label htmlFor="education">Education Levels</Label>
-                      <Select onValueChange={(value) => handleSelectChange('education', value)}>
+                      <Select 
+                        value={formData.education || ''}
+                        onValueChange={(value) => handleSelectChange('education', value)}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select education level" />
                         </SelectTrigger>
