@@ -112,7 +112,7 @@ const MyProfile = () => {
       } else if (error.message.includes('401')) {
         toast.error('Session expired. Please log in again.');
         // Optionally redirect to login
-        navigate('/login');
+        window.location.href = '/login';
       } else {
         toast.error(error.message || 'Failed to update profile. Please try again.');
       }
