@@ -130,7 +130,7 @@ const UserDashboard: React.FC = () => {
           
           // Verify the token is still valid
           try {
-            const response = await fetch('http://localhost:5001/api/auth/verify-token', {
+            const response = await fetch('http://localhost:5000/api/auth/verify-token', {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             
@@ -161,7 +161,7 @@ const UserDashboard: React.FC = () => {
     const fetchUserProfile = async (token: string) => {
       try {
         console.log('Fetching fresh user profile...');
-        const response = await fetch('http://localhost:5001/api/auth/profile', {
+        const response = await fetch('http://localhost:5000/api/auth/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
