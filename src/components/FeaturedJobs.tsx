@@ -15,8 +15,10 @@ const FeaturedJobs = () => {
       try {
         const response = await fetch('http://localhost:5001/api/jobs/public');
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json().catch(() => ({ data: [] }));
           setJobs(data.data || []);
+        } else {
+          console.error('Failed to fetch jobs:', response.status);
         }
       } catch (error) {
         console.error('Error fetching jobs:', error);

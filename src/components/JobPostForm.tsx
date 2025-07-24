@@ -60,10 +60,13 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
         })
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({
+        success: false,
+        message: 'Server returned invalid response'
+      }));
       
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to post job');
+        throw new Error(data.message || `Server error: ${response.status}`);
       }
 
       if (!data.success) {
