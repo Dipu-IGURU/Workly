@@ -3,15 +3,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, DollarSign, Bookmark } from "lucide-react";
+import { useJobs } from "@/contexts/JobsContext";
 
 const FeaturedJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { jobsVersion } = useJobs();
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/jobs/public');
+        const response = await fetch('http://localhost:5001/api/jobs/public');
         if (response.ok) {
           const data = await response.json();
           setJobs(data.data || []);
@@ -24,7 +26,7 @@ const FeaturedJobs = () => {
     };
 
     fetchJobs();
-  }, []);
+  }, [jobsVersion]); // Re-fetch when jobsVersion changes
 
   if (loading) {
     return (

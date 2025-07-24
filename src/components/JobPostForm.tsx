@@ -5,6 +5,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useJobs } from "@/contexts/JobsContext";
 
 export interface JobPostData {
   title: string;
@@ -32,6 +33,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
     requirements: '',
   });
   const { toast } = useToast();
+  const { refreshJobs } = useJobs();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -46,7 +48,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch('http://localhost:5000/api/jobs', {
+      const response = await fetch('http://localhost:5001/api/jobs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +75,18 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
         description: data.message || "Job posted successfully.",
       });
       
+      // Reset form after successful submission
+      setFormData({
+        title: '',
+        company: '',
+        location: '',
+        type: 'Full-time',
+        description: '',
+        requirements: '',
+      });
+      
       setOpen(false);
+      refreshJobs(); // Refresh jobs list
       if (onSuccess) onSuccess();
     } catch (error: any) {
       console.error('Error posting job:', error);
