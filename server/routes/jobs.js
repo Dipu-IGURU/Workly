@@ -68,4 +68,26 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// @route   GET api/jobs/public
+// @desc    Get all public jobs for display
+// @access  Public
+router.get('/public', async (req, res) => {
+  try {
+    const jobs = await Job.find().sort({ date: -1 }).limit(20);
+    
+    res.status(200).json({
+      success: true,
+      count: jobs.length,
+      data: jobs
+    });
+  } catch (err) {
+    console.error('Error fetching public jobs:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching jobs',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
 module.exports = router;

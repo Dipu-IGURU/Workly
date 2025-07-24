@@ -8,17 +8,17 @@ const auth = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ msg: 'No token, authorization denied' });
+      return res.status(401).json({ success: false, message: 'No token, authorization denied' });
     }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Add user from payload
-    const user = await User.findById(decoded.user.id).select('-password');
+    const user = await User.findById(decoded.userId).select('-password');
     
     if (!user) {
-      return res.status(401).json({ msg: 'Token is not valid' });
+      return res.status(401).json({ success: false, message: 'Token is not valid' });
     }
 
     req.user = user;
@@ -26,11 +26,11 @@ const auth = async (req, res, next) => {
   } catch (err) {
     console.error('Auth middleware error:', err.message);
     if (err.name === 'JsonWebTokenError') {
-      return res.status(401).json({ msg: 'Token is not valid' });
+      return res.status(401).json({ success: false, message: 'Token is not valid' });
     } else if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ msg: 'Token has expired' });
+      return res.status(401).json({ success: false, message: 'Token has expired' });
     }
-    res.status(500).send('Server Error');
+    res.status(500).json({ success: false, message: 'Server error during authentication' });
   }
 };
 
