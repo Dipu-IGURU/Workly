@@ -269,10 +269,13 @@ const UserDashboard: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <Button variant="outline" size="sm" className="ml-4">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={() => window.location.href = 'http://localhost:8080'}>Home</Button>
+          <Button variant="outline" size="sm" className="ml-2">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
