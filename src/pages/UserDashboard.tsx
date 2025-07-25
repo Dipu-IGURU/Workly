@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,6 @@ import {
   Briefcase
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { profileApi } from "@/lib/api";
 // DashboardLayout is now handled by the router
 import { cn } from "@/lib/utils";
 
@@ -26,24 +25,9 @@ interface UserData {
   lastName: string;
   email: string;
   role: string;
-  profile?: {
-    avatar?: string;
-    fullName?: string;
-    jobTitle?: string;
-    phone?: string;
-    website?: string;
-    currentSalary?: string;
-    experience?: string;
-    age?: string;
-    education?: string;
-    description?: string;
-    facebook?: string;
-    twitter?: string;
-    linkedin?: string;
-    country?: string;
-    city?: string;
-    address?: string;
-  };
+  avatar?: string;
+  location?: string;
+  title?: string;
 }
 
 interface NavItem {
@@ -66,11 +50,19 @@ interface JobApplication {
 }
 
 const UserDashboard: React.FC = () => {
-  const [user, setUser] = useState<UserData | null>(null);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>({
+    id: '1',
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    role: 'user',
+    title: 'Senior UI/UX Designer',
+    location: 'San Francisco, CA',
+    avatar: ''
+  });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const routeLocation = useLocation();
+  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -187,16 +179,6 @@ const UserDashboard: React.FC = () => {
           // Update localStorage with fresh user data
           localStorage.setItem('user', JSON.stringify(data.user));
           
-          // Fetch detailed profile data
-          try {
-            const profileResult = await profileApi.getProfile();
-            if (profileResult.success) {
-              setProfileData(profileResult.profile);
-            }
-          } catch (profileError) {
-            console.log('Profile details not available yet');
-          }
-          
           if (data.user.role !== 'user') {
             console.log('User role is not user, redirecting to recruiter dashboard');
             navigate('/recruiter-dashboard', { replace: true });
@@ -232,30 +214,6 @@ const UserDashboard: React.FC = () => {
     checkAuthAndFetchProfile();
   }, [navigate, toast]);
 
-  const handleRefresh = async () => {
-    setLoading(true);
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const profileResult = await profileApi.getProfile();
-        if (profileResult.success) {
-          setProfileData(profileResult.profile);
-          toast({
-            title: "Dashboard updated",
-            description: "Your profile data has been refreshed.",
-          });
-        }
-      } catch (error) {
-        toast({
-          title: "Refresh failed",
-          description: "Could not update dashboard data.",
-          variant: "destructive",
-        });
-      }
-    }
-    setLoading(false);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     toast({
@@ -287,7 +245,7 @@ const UserDashboard: React.FC = () => {
   }
 
   // Get current route path
-  const currentPath = routeLocation.pathname;
+  const currentPath = location.pathname;
 
   // Navigation is now handled by DashboardSidebar component
 
@@ -307,47 +265,22 @@ const UserDashboard: React.FC = () => {
     }
   };
 
-  // Get display name and job title
-  const displayName = profileData?.fullName || `${user?.firstName} ${user?.lastName}` || 'User';
-  const jobTitle = profileData?.jobTitle || 'No job title set';
-  const userLocation = profileData?.city && profileData?.country ? `${profileData.city}, ${profileData.country}` : 'Location not set';
-
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <Button variant="outline" size="sm" className="ml-4">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex space-x-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/">
+              Home
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" className="ml-2">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
-
-      {/* User Profile Summary */}
-      <Card className="mb-8">
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-8 h-8 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold">{displayName}</h2>
-              <p className="text-gray-600">{jobTitle}</p>
-              <p className="text-sm text-gray-500">{userLocation}</p>
-              {profileData?.experience && (
-                <p className="text-sm text-gray-500">Experience: {profileData.experience}</p>
-              )}
-              {(!profileData?.fullName || !profileData?.jobTitle) && (
-                <p className="text-sm text-blue-600 mt-2 font-medium">
-                  Complete your profile to get better job recommendations
-                </p>
-              )}
-            </div>
-            <Button variant="outline" onClick={() => navigate('/profile')}>
-              Edit Profile
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>

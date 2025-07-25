@@ -9,6 +9,15 @@ const FeaturedJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { jobsVersion } = useJobs();
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [isApplicationOpen, setIsApplicationOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    resume: null as File | null,
+    coverLetter: ''
+  });
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -128,7 +137,10 @@ const FeaturedJobs = () => {
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
                       {job.type}
                     </Badge>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedJob(job);
+                      setIsApplicationOpen(true);
+                    }}>
                       Apply Now
                     </Button>
                   </div>
@@ -150,6 +162,85 @@ const FeaturedJobs = () => {
           </div>
         )}
       </div>
+      {isApplicationOpen && selectedJob && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setIsApplicationOpen(false)}>
+          <div className="relative z-50 w-full max-w-2xl bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setIsApplicationOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+            >
+              <span className="sr-only">Close</span>
+              ×
+            </button>
+            <h2 className="text-2xl font-bold mb-2">Apply for {selectedJob.title}</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">at {selectedJob.company}</p>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              // Basic validation
+              if (!formData.fullName || !formData.email || !formData.phone || !formData.resume) {
+                alert('Please fill in all required fields.');
+                return;
+              }
+              try {
+                const formDataToSend = new FormData();
+                formDataToSend.append('jobId', selectedJob._id);
+                formDataToSend.append('fullName', formData.fullName);
+                formDataToSend.append('email', formData.email);
+                formDataToSend.append('phone', formData.phone);
+                formDataToSend.append('coverLetter', formData.coverLetter);
+                if (formData.resume) {
+                  formDataToSend.append('resume', formData.resume);
+                }
+                const token = localStorage.getItem('token');
+                if (!token) throw new Error('No authentication token found');
+                const response = await fetch('http://localhost:5001/api/jobs/apply', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${token}` },
+                  body: formDataToSend
+                });
+                if (!response.ok) throw new Error('Failed to submit application');
+                alert('Application submitted!');
+                setFormData({ fullName: '', email: '', phone: '', resume: null, coverLetter: '' });
+                setIsApplicationOpen(false);
+              } catch (error) {
+                alert('Failed to submit application. Please try again.');
+              }
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="fullName">Full Name *</label>
+                  <input id="fullName" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} className="mt-1 w-full border rounded p-2" required />
+                </div>
+                <div>
+                  <label htmlFor="email">Email *</label>
+                  <input id="email" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="mt-1 w-full border rounded p-2" required />
+                </div>
+                <div>
+                  <label htmlFor="phone">Phone *</label>
+                  <input id="phone" type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="mt-1 w-full border rounded p-2" required />
+                </div>
+                <div>
+                  <label htmlFor="resume">Resume (PDF, DOC, DOCX) *</label>
+                  <input id="resume" type="file" accept=".pdf,.doc,.docx" onChange={e => {
+                    if (e.target.files && e.target.files[0]) {
+                      setFormData({ ...formData, resume: e.target.files[0] });
+                    }
+                  }} className="mt-1 w-full border rounded p-2" required />
+                </div>
+                <div>
+                  <label htmlFor="coverLetter">Cover Letter</label>
+                  <textarea id="coverLetter" value={formData.coverLetter} onChange={e => setFormData({ ...formData, coverLetter: e.target.value })} className="mt-1 w-full border rounded p-2" rows={6} placeholder="Tell us why you're a good fit for this position..." />
+                </div>
+              </div>
+              <div className="mt-8 flex justify-end space-x-3">
+                <button type="button" className="border rounded px-4 py-2" onClick={() => setIsApplicationOpen(false)}>Cancel</button>
+                <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2">Submit Application</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Briefcase, MapPin, Clock, Calendar, Users, Pencil, Trash2 } from 'lucide-react';
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Briefcase, Calendar, Users, Pencil, Trash2, Send, X } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface Job {
@@ -26,6 +30,47 @@ interface JobListProps {
 
 export function JobList({ jobs, onEdit, onDelete, showActions = true }: JobListProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [selectedJob, setSelectedJob] = useState<{id: string, title: string, company: string} | null>(null);
+  const [isApplicationOpen, setIsApplicationOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    resume: null as File | null,
+    coverLetter: ''
+  });
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const handleApplyClick = (e: React.MouseEvent, job: Job) => {
+    e.stopPropagation();
+    console.log('1. Apply Now button clicked for job:', job.title);
+    
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    console.log('2. Token exists:', !!token);
+    
+    if (!token) {
+      console.log('3. No token found, redirecting to login');
+      toast({
+        title: 'Please Login',
+        description: 'You need to log in to apply for jobs',
+        variant: 'destructive'
+      });
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    
+    // Set the selected job and open the form
+    console.log('3. Setting selected job and opening application form');
+    setSelectedJob({
+      id: job._id,
+      title: job.title,
+      company: job.company
+    });
+    console.log('4. Setting isApplicationOpen to true');
+    setIsApplicationOpen(true);
+  };
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -139,13 +184,193 @@ export function JobList({ jobs, onEdit, onDelete, showActions = true }: JobListP
               )}
             </div>
           </CardContent>
-          <CardFooter className="pt-1">
+          <CardFooter className="pt-1 flex justify-between items-center">
             <Button variant="link" size="sm" className="px-0">
               View details →
+            </Button>
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="ml-2 z-10 relative"
+              onClick={(e) => handleApplyClick(e, job)}
+            >
+              <Send className="mr-2 h-4 w-4" /> Apply Now
             </Button>
           </CardFooter>
         </Card>
       ))}
+      
+      {isApplicationOpen && selectedJob && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onClick={() => setIsApplicationOpen(false)}
+        >
+          <div 
+            ref={formRef}
+            className="relative z-50 w-full max-w-2xl bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute right-4 top-4 h-8 w-8 p-0"
+              onClick={() => setIsApplicationOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            
+            <h2 className="text-2xl font-bold mb-2">Apply for {selectedJob.title}</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">at {selectedJob.company}</p>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="fullName">Full Name *</Label>
+                <Input 
+                  id="fullName" 
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                  className="mt-1 w-full" 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="email">Email *</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="mt-1 w-full" 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="phone">Phone *</Label>
+                <Input 
+                  id="phone" 
+                  type="tel" 
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="mt-1 w-full" 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="resume">Resume (PDF, DOC, DOCX) *</Label>
+                <Input 
+                  id="resume" 
+                  type="file" 
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setFormData({...formData, resume: e.target.files[0]});
+                    }
+                  }}
+                  className="mt-1 w-full" 
+                  accept=".pdf,.doc,.docx" 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="coverLetter">Cover Letter</Label>
+                <Textarea 
+                  id="coverLetter" 
+                  value={formData.coverLetter}
+                  onChange={(e) => setFormData({...formData, coverLetter: e.target.value})}
+                  className="mt-1 w-full" 
+                  rows={6} 
+                  placeholder="Tell us why you're a good fit for this position..."
+                />
+              </div>
+            </div>
+            
+            <div className="mt-8 flex justify-end space-x-3">
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={() => setIsApplicationOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button"
+                onClick={async () => {
+                  // Basic validation
+                  if (!formData.fullName || !formData.email || !formData.phone || !formData.resume) {
+                    toast({
+                      title: 'Missing Information',
+                      description: 'Please fill in all required fields.',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+
+                  try {
+                    // Create form data for file upload
+                    const formDataToSend = new FormData();
+                    formDataToSend.append('jobId', selectedJob.id);
+                    formDataToSend.append('fullName', formData.fullName);
+                    formDataToSend.append('email', formData.email);
+                    formDataToSend.append('phone', formData.phone);
+                    formDataToSend.append('coverLetter', formData.coverLetter);
+                    if (formData.resume) {
+                      formDataToSend.append('resume', formData.resume);
+                    }
+
+                    // Get token from localStorage
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                      throw new Error('No authentication token found');
+                    }
+
+                    // Send application
+                    const response = await fetch('http://localhost:5001/api/jobs/apply', {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: formDataToSend
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to submit application');
+                    }
+
+                    // Show success message
+                    toast({
+                      title: 'Application Submitted!',
+                      description: `Your application for ${selectedJob.title} at ${selectedJob.company} has been received.`,
+                    });
+
+                    // Reset form and close dialog
+                    setFormData({
+                      fullName: '',
+                      email: '',
+                      phone: '',
+                      resume: null,
+                      coverLetter: ''
+                    });
+                    setIsApplicationOpen(false);
+
+                  } catch (error) {
+                    console.error('Error submitting application:', error);
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to submit application. Please try again.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+              >
+                Submit Application
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
