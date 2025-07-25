@@ -102,10 +102,11 @@ const App = () => {
           <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public Routes */}
+            {/* Public Routes - No authentication required */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="*" element={<NotFound />} />
             
             {/* Protected Dashboard Routes */}
             <Route element={
@@ -147,9 +148,6 @@ const App = () => {
                 </div>
               } />
             </Route>
-            
-            {/* 404 Route - Must be last */}
-            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

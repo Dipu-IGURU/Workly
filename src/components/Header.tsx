@@ -1,11 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Search, ChevronDown, Menu } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, ChevronDown, Menu, User, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Sheet,
@@ -13,26 +16,74 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
+interface UserData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+}
+
 const Header = () => {
+  const [user, setUser] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
+      
+      if (token && userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your account.",
+    });
+    navigate('/');
+  };
+
+  const getDashboardLink = () => {
+    if (!user) return '/login';
+    return user.role === 'recruiter' ? '/recruiter-dashboard' : '/user-dashboard';
+  };
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
+            <Link to="/" className="flex-shrink-0 flex items-center">
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-xl">W</span>
               </div>
               <span className="ml-2 text-xl font-bold text-foreground">Workly</span>
-            </div>
+            </Link>
           </div>
 
           <nav className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center space-x-1 text-foreground hover:text-primary cursor-pointer">
-                  <span>Home</span>
-                  <ChevronDown className="w-4 h-4" />
+                  <Link to="/" className="flex items-center space-x-1">
+                    <span>Home</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </Link>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem>Home Default</DropdownMenuItem>
@@ -113,14 +164,55 @@ const Header = () => {
               <Button variant="outline" className="hidden lg:inline-flex text-sm">
                 Upload your CV
               </Button>
-              <Link to="/login">
-                <Button variant="outline" size="sm" className="text-sm">
-                  Login / Register
+              
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center space-x-2">
+                      <User className="w-4 h-4" />
+                      <span>{user.firstName} {user.lastName}</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to={getDashboardLink()} className="flex items-center">
+                        <User className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center">
+                        <User className="w-4 h-4 mr-2" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="flex items-center text-red-600">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link to="/login">
+                  <Button variant="outline" size="sm" className="text-sm">
+                    Login / Register
+                  </Button>
+                </Link>
+              )}
+              
+              {user?.role === 'recruiter' ? (
+                <Link to="/recruiter-dashboard">
+                  <Button size="sm" className="text-sm">
+                    Post Job
+                  </Button>
+                </Link>
+              ) : (
+                <Button size="sm" className="text-sm">
+                  Job Post
                 </Button>
-              </Link>
-              <Button size="sm" className="text-sm">
-                Job Post
-              </Button>
+              )}
             </div>
 
             {/* Mobile menu */}
@@ -206,9 +298,24 @@ const Header = () => {
                     <Button variant="outline" className="w-full h-11 text-sm">
                       Upload your CV
                     </Button>
-                    <Button variant="outline" className="w-full h-11 text-sm">
-                      Login / Register
-                    </Button>
+                    {user ? (
+                      <>
+                        <Link to={getDashboardLink()}>
+                          <Button variant="outline" className="w-full h-11 text-sm">
+                            Dashboard
+                          </Button>
+                        </Link>
+                        <Button onClick={handleLogout} variant="destructive" className="w-full h-11 text-sm">
+                          Logout
+                        </Button>
+                      </>
+                    ) : (
+                      <Link to="/login">
+                        <Button variant="outline" className="w-full h-11 text-sm">
+                          Login / Register
+                        </Button>
+                      </Link>
+                    )}
                     <Button className="w-full h-11 text-sm">
                       Job Post
                     </Button>
