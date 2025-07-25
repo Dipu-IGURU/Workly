@@ -652,11 +652,11 @@ const RecruiterDashboard = () => {
                                   <div className="flex items-center gap-3">
                                     <h3 className="text-lg font-semibold">{application.applicantName}</h3>
                                     <Badge 
-                                      variant={
+                                       variant={
                                         application.status === 'pending' ? 'outline' :
                                         application.status === 'reviewed' ? 'secondary' :
                                         application.status === 'interview' ? 'default' :
-                                        application.status === 'hired' ? 'success' : 'destructive'
+                                        application.status === 'hired' ? 'secondary' : 'destructive'
                                       }
                                       className="capitalize"
                                     >
