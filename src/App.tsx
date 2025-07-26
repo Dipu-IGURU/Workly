@@ -15,6 +15,7 @@ import AppliedJobs from "./pages/AppliedJobs";
 import ViewProfile from "./pages/ViewProfile";
 import JobAlerts from "./pages/JobAlerts";
 import ShortlistedJobs from "./pages/ShortlistedJobs";
+import CVManager from "./pages/CVManager";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import { useEffect, useState } from 'react';
@@ -180,6 +181,14 @@ const App = () => {
                 <div className="py-6">
                   <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                     <ShortlistedJobs />
+                  </div>
+                </div>
+              } />
+              
+              <Route path="/cv-manager" element={
+                <div className="py-6">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                    <CVManager />
                   </div>
                 </div>
               } />
