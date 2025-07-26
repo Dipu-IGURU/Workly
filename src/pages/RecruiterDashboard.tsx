@@ -150,102 +150,44 @@ const RecruiterDashboard = () => {
         return;
       }
       
-      console.log('Token found, making API request to fetch jobs');
+      console.log('Fetching jobs for recruiter...');
 
-      // Add a timeout to the fetch request
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-      try {
-        // First, verify the token is still valid
-        const verifyResponse = await fetch('http://localhost:5001/api/auth/verify-token', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-
-        if (!verifyResponse.ok) {
-          throw new Error('Session expired. Please log in again.');
+      const response = await fetch('http://localhost:5001/api/jobs', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-
-        // If token is valid, fetch jobs
-        const response = await fetch('http://localhost:5001/api/jobs', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        // Check if response is OK (status 200-299)
-        if (!response.ok) {
-          if (response.status === 401) {
-            // Token is invalid or expired
-            localStorage.removeItem('token');
-            navigate('/login');
-            return;
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
         }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          setJobs(data.data || []);
-        } else {
-          throw new Error(data.message || 'Failed to fetch jobs');
-        }
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        
-        // Handle network errors
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-          console.error('Network error:', error);
-          throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
-        }
-        
-        // Handle timeout errors
-        if (error.name === 'AbortError') {
-          console.error('Request timed out:', error);
-          throw new Error('Request timed out. The server is taking too long to respond. Please try again later.');
-        }
-        
-        // Handle other errors
-        console.error('Error in fetchJobs:', error);
-        throw error;
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-
+      
+      const data = await response.json();
+      console.log('Jobs response:', data);
+      
+      if (data.success) {
+        setJobs(data.data || []);
+        console.log('Jobs loaded successfully:', data.data?.length || 0);
+      } else {
+        throw new Error(data.message || 'Failed to fetch jobs');
+      }
 
     } catch (error: any) {
-      console.error('Error in fetchJobs:', error);
+      console.error('Error fetching jobs:', error);
       
       // Show user-friendly error message
-      const errorMessage = error.message || 'Failed to fetch jobs. Please try again.';
-      
-      // If it's an authentication error, redirect to login
-      if (error.message?.includes('Session expired') || error.message?.includes('unauthorized')) {
-        localStorage.removeItem('token');
-        navigate('/login');
-        toast({
-          title: "Session Expired",
-          description: "Your session has expired. Please log in again.",
-          variant: "destructive",
-        });
-      } else {
-        // Show other errors to the user
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: "Failed to load jobs. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setJobsLoading(false);
     }
@@ -575,28 +517,52 @@ const RecruiterDashboard = () => {
                         <div className="flex justify-center py-8">
                           <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
+                      ) : jobs.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Briefcase className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                          <h3 className="text-lg font-medium">No job posts yet</h3>
+                          <p className="text-sm">Start by posting your first job to attract candidates.</p>
+                        </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="grid gap-4">
                           {jobs.map((job) => (
-                            <div key={job._id} className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                              <div>
-                                <h3 className="font-semibold text-lg">{job.title}</h3>
-                                <p className="text-muted-foreground text-sm">{job.company} &middot; {job.location} &middot; {job.type}</p>
-                                <p className="text-xs text-gray-400 mt-1">Posted on {new Date(job.createdAt).toLocaleDateString()}</p>
-                              </div>
-                              <div className="flex flex-col md:flex-row md:items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                   {job.applicants && job.applicants.length > 0 ? `${job.applicants.length} Applicant${job.applicants.length > 1 ? 's' : ''}` : 'No Applicants'}
-                                 </Badge>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => handleViewApplicants(job._id, job.title)}
-                                >
-                                  View Applicants
-                                </Button>
-                              </div>
-                            </div>
+                            <Card key={job._id} className="border-2 hover:shadow-lg transition-shadow">
+                              <CardContent className="p-6">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                  <div className="flex-1">
+                                    <h3 className="font-bold text-xl text-primary">{job.title}</h3>
+                                    <p className="text-muted-foreground text-sm mt-1">
+                                      <span className="font-medium">{job.company}</span> &middot; {job.location} &middot; 
+                                      <Badge variant="secondary" className="ml-2">{job.type}</Badge>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                      Posted on {new Date(job.createdAt).toLocaleDateString()}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                                      {job.description}
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-col md:flex-row md:items-center gap-3">
+                                    <div className="text-center">
+                                      <Badge variant="outline" className="text-xs bg-primary/10">
+                                        {job.applicants && job.applicants.length > 0 
+                                          ? `${job.applicants.length} Applicant${job.applicants.length > 1 ? 's' : ''}` 
+                                          : 'No Applicants'}
+                                      </Badge>
+                                    </div>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => handleViewApplicants(job._id, job.title)}
+                                      className="min-w-[120px]"
+                                    >
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      View Applicants
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
                           ))}
                         </div>
                       )}
