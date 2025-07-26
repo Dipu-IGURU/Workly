@@ -183,21 +183,12 @@ const FeaturedJobs = () => {
                 return;
               }
               try {
-                const formDataToSend = new FormData();
-                formDataToSend.append('jobId', selectedJob._id);
-                formDataToSend.append('fullName', formData.fullName);
-                formDataToSend.append('email', formData.email);
-                formDataToSend.append('phone', formData.phone);
-                formDataToSend.append('coverLetter', formData.coverLetter);
-                if (formData.resume) {
-                  formDataToSend.append('resume', formData.resume);
-                }
+                // Optionally, you can still upload the resume/cover letter to another endpoint if needed
                 const token = localStorage.getItem('token');
                 if (!token) throw new Error('No authentication token found');
-                const response = await fetch('http://localhost:5001/api/jobs/apply', {
+                const response = await fetch(`http://localhost:5001/api/jobs/${selectedJob._id}/apply`, {
                   method: 'POST',
                   headers: { 'Authorization': `Bearer ${token}` },
-                  body: formDataToSend
                 });
                 if (!response.ok) throw new Error('Failed to submit application');
                 alert('Application submitted!');

@@ -71,4 +71,16 @@ router.put('/', auth, async (req, res) => {
   }
 });
 
+// @route   GET api/profile/applied-jobs
+// @desc    Get all jobs the user has applied to
+// @access  Private (User)
+router.get('/applied-jobs', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('appliedJobs.job');
+    res.json({ success: true, jobs: user.appliedJobs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

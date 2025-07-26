@@ -43,10 +43,10 @@ interface JobApplication {
   company: string;
   location: string;
   type: string;
-  status: 'applied' | 'interview' | 'rejected' | 'shortlisted';
+  status?: string;
   date: string;
-  salary: string;
-  logo: string;
+  salary?: string;
+  logo?: string;
 }
 
 const UserDashboard: React.FC = () => {
@@ -65,45 +65,46 @@ const UserDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [appliedJobs, setAppliedJobs] = useState<JobApplication[]>([]);
 
   // Navigation is now handled by DashboardSidebar component
 
   // Mock job applications data
-  const jobApplications: JobApplication[] = [
-    {
-      id: '1',
-      title: 'Senior UI/UX Designer',
-      company: 'Facebook Inc.',
-      location: 'New York, USA',
-      type: 'Full Time',
-      status: 'applied',
-      date: '2023-10-15',
-      salary: '$60k - $80k',
-      logo: '/logos/facebook.png'
-    },
-    {
-      id: '2',
-      title: 'Product Designer',
-      company: 'Google',
-      location: 'Mountain View, CA',
-      type: 'Full Time',
-      status: 'interview',
-      date: '2023-10-10',
-      salary: '$70k - $90k',
-      logo: '/logos/google.png'
-    },
-    {
-      id: '3',
-      title: 'UI/UX Designer',
-      company: 'Dribbble',
-      location: 'Remote',
-      type: 'Part Time',
-      status: 'shortlisted',
-      date: '2023-10-05',
-      salary: '$50k - $70k',
-      logo: '/logos/dribbble.png'
-    },
-  ];
+  // const jobApplications: JobApplication[] = [
+  //   {
+  //     id: '1',
+  //     title: 'Senior UI/UX Designer',
+  //     company: 'Facebook Inc.',
+  //     location: 'New York, USA',
+  //     type: 'Full Time',
+  //     status: 'applied',
+  //     date: '2023-10-15',
+  //     salary: '$60k - $80k',
+  //     logo: '/logos/facebook.png'
+  //   },
+  //   {
+  //     id: '2',
+  //     title: 'Product Designer',
+  //     company: 'Google',
+  //     location: 'Mountain View, CA',
+  //     type: 'Full Time',
+  //     status: 'interview',
+  //     date: '2023-10-10',
+  //     salary: '$70k - $90k',
+  //     logo: '/logos/google.png'
+  //   },
+  //   {
+  //     id: '3',
+  //     title: 'UI/UX Designer',
+  //     company: 'Dribbble',
+  //     location: 'Remote',
+  //     type: 'Part Time',
+  //     status: 'shortlisted',
+  //     date: '2023-10-05',
+  //     salary: '$50k - $70k',
+  //     logo: '/logos/dribbble.png'
+  //   },
+  // ];
 
   useEffect(() => {
     console.log('UserDashboard mounted, checking authentication...');
@@ -213,6 +214,36 @@ const UserDashboard: React.FC = () => {
 
     checkAuthAndFetchProfile();
   }, [navigate, toast]);
+
+  useEffect(() => {
+    // Fetch applied jobs after authentication
+    const fetchAppliedJobs = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await fetch('http://localhost:5001/api/profile/applied-jobs', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success && Array.isArray(data.jobs)) {
+          setAppliedJobs(
+            data.jobs.map((item: any) => ({
+              id: item.job._id,
+              title: item.job.title,
+              company: item.job.company,
+              location: item.job.location,
+              type: item.job.type,
+              date: item.appliedAt,
+              // Add more fields as needed
+            }))
+          );
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchAppliedJobs();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -342,43 +373,43 @@ const UserDashboard: React.FC = () => {
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
-            {jobApplications.map((job) => (
-              <div key={job.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex space-x-4">
-                    <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Briefcase className="w-6 h-6 text-gray-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">{job.title}</h4>
-                      <p className="text-sm text-gray-600">{job.company}</p>
-                      <div className="flex items-center mt-1 text-xs text-gray-500 space-x-4">
-                        <span className="flex items-center">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {job.location}
-                        </span>
-                        <span className="flex items-center">
-                          <DollarSign className="w-3 h-3 mr-1" />
-                          {job.salary}
-                        </span>
-                        <span className="flex items-center">
-                          <ClockIcon className="w-3 h-3 mr-1" />
-                          {job.date}
-                        </span>
+            {appliedJobs.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground">No applications yet.</div>
+            ) : (
+              appliedJobs.map((job) => (
+                <div key={job.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex space-x-4">
+                      <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Briefcase className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{job.title}</h4>
+                        <p className="text-sm text-gray-600">{job.company}</p>
+                        <div className="flex items-center mt-1 text-xs text-gray-500 space-x-4">
+                          <span className="flex items-center">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {job.location}
+                          </span>
+                          <span className="flex items-center">
+                            <ClockIcon className="w-3 h-3 mr-1" />
+                            {new Date(job.date).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end space-y-2">
-                    <Badge className={cn("text-xs", getStatusBadge(job.status))}>
-                      {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
-                    </Badge>
-                    <Button variant="outline" size="sm" className="text-xs">
-                      View Details
-                    </Button>
+                    <div className="flex flex-col items-end space-y-2">
+                      <Badge className={cn("text-xs", getStatusBadge(job.status || 'applied'))}>
+                        Applied
+                      </Badge>
+                      <Button variant="outline" size="sm" className="text-xs">
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -396,8 +427,9 @@ const UserDashboard: React.FC = () => {
         </CardHeader>
         <CardContent className="p-0">
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
-            {jobApplications.map((job) => (
-              <div key={`rec-${job.id}`} className="p-6 hover:bg-gray-50 transition-colors">
+            {/* This section is currently using mock data, will be updated to fetch from backend */}
+            {/* For now, it will show the mock data as per the original file */}
+            {/* <div key={`rec-${job.id}`} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
                     <Briefcase className="w-6 h-6 text-gray-400" />
@@ -423,8 +455,7 @@ const UserDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              </div> */}
           </div>
         </CardContent>
       </Card>

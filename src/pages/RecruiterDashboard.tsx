@@ -40,6 +40,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuItem 
 } from "@/components/ui/dropdown-menu";
+import { Dialog } from '@/components/ui/dialog';
 
 interface UserData {
   id: string;
@@ -87,6 +88,10 @@ const RecruiterDashboard = () => {
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [applicantsModalOpen, setApplicantsModalOpen] = useState(false);
+  const [selectedJobApplicants, setSelectedJobApplicants] = useState<any[]>([]);
+  const [selectedJobTitle, setSelectedJobTitle] = useState<string>('');
+  const [applicantsLoading, setApplicantsLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -334,6 +339,36 @@ const RecruiterDashboard = () => {
     }
   };
 
+  const handleViewApplicants = async (jobId: string, jobTitle: string) => {
+    setApplicantsModalOpen(true);
+    setSelectedJobTitle(jobTitle);
+    setApplicantsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5001/api/jobs/${jobId}/applicants`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.applicants)) {
+        setSelectedJobApplicants(data.applicants);
+      } else {
+        setSelectedJobApplicants([]);
+      }
+    } catch (err) {
+      setSelectedJobApplicants([]);
+    } finally {
+      setApplicantsLoading(false);
+    }
+  };
+
+  // Calculate dynamic stats
+  const activeJobPosts = jobs.length;
+  const jobsThisMonth = jobs.filter(job => new Date(job.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length;
+  const applicationsReceived = applications.length;
+  const applicationsThisWeek = applications.filter(app => new Date(app.appliedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
+  const interviewsScheduled = applications.filter(app => app.status === 'interview').length;
+  const interviewsThisWeek = applications.filter(app => app.status === 'interview' && new Date(app.appliedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -433,9 +468,9 @@ const RecruiterDashboard = () => {
                       <Briefcase className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{jobs.length}</div>
+                      <div className="text-2xl font-bold">{activeJobPosts}</div>
                       <p className="text-xs text-muted-foreground">
-                        {jobs.filter(job => new Date(job.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length} this month
+                        {jobsThisMonth} this month
                       </p>
                     </CardContent>
                   </Card>
@@ -445,9 +480,9 @@ const RecruiterDashboard = () => {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{applications.length}</div>
+                      <div className="text-2xl font-bold">{applicationsReceived}</div>
                       <p className="text-xs text-muted-foreground">
-                        {applications.filter(app => new Date(app.appliedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length} this week
+                        {applicationsThisWeek} this week
                       </p>
                     </CardContent>
                   </Card>
@@ -458,13 +493,10 @@ const RecruiterDashboard = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {applications.filter(app => app.status === 'interview').length}
+                        {interviewsScheduled}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {applications.filter(app => 
-                          app.status === 'interview' && 
-                          new Date(app.appliedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                        ).length} this week
+                        {interviewsThisWeek} this week
                       </p>
                     </CardContent>
                   </Card>
@@ -496,33 +528,19 @@ const RecruiterDashboard = () => {
                           return (
                             <div key={application._id} className="flex items-center justify-between p-4 border rounded-lg">
                               <div>
-                                <h4 className="font-semibold">{application.applicantName}</h4>
+                                <h4 className="font-semibold">{application.applicant?.firstName} {application.applicant?.lastName}</h4>
                                 <p className="text-sm text-muted-foreground">
                                   {application.jobTitle}
                                 </p>
                                 <p className="text-xs text-muted-foreground">{timeText}</p>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <Badge 
-                                  variant={
-                                    application.status === 'pending' ? 'default' : 
-                                    application.status === 'reviewed' ? 'secondary' : 
-                                    application.status === 'interview' ? 'outline' :
-                                    application.status === 'hired' ? 'default' : 'destructive'
-                                  }
-                                >
-                                  {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                                </Badge>
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  onClick={() => {
-                                    // Navigate to application details or open a modal
-                                    // This can be implemented based on your navigation setup
-                                    console.log('View application:', application._id);
-                                  }}
+                                  onClick={() => window.open(`/profile/${application.applicant?._id}`, '_blank')}
                                 >
-                                  <Eye className="w-4 h-4" />
+                                  View Profile
                                 </Button>
                               </div>
                             </div>
@@ -559,13 +577,70 @@ const RecruiterDashboard = () => {
                           <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                       ) : (
-                        <JobList 
-                          jobs={jobs} 
-                          onDelete={handleJobDeleted}
-                        />
+                        <div className="space-y-4">
+                          {jobs.map((job) => (
+                            <div key={job._id} className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                              <div>
+                                <h3 className="font-semibold text-lg">{job.title}</h3>
+                                <p className="text-muted-foreground text-sm">{job.company} &middot; {job.location} &middot; {job.type}</p>
+                                <p className="text-xs text-gray-400 mt-1">Posted on {new Date(job.createdAt).toLocaleDateString()}</p>
+                              </div>
+                              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {job.applicants && job.applicants.length > 0 ? `${job.applicants.length} Applicant${job.applicants.length > 1 ? 's' : ''}` : 'No Applicants'}
+                                </Badge>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleViewApplicants(job._id, job.title)}
+                                >
+                                  View Applicants
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
+                  {/* Applicants Modal */}
+                  {applicantsModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                      <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
+                        <button
+                          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+                          onClick={() => setApplicantsModalOpen(false)}
+                        >
+                          ×
+                        </button>
+                        <h2 className="text-xl font-bold mb-4">Applicants for {selectedJobTitle}</h2>
+                        {applicantsLoading ? (
+                          <div className="text-center py-8">Loading...</div>
+                        ) : selectedJobApplicants.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">No applicants yet.</div>
+                        ) : (
+                          <div className="space-y-4 max-h-96 overflow-y-auto">
+                            {selectedJobApplicants.map((app, idx) => (
+                              <div key={app.user._id || idx} className="border rounded p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                <div>
+                                  <div className="font-semibold">{app.user.firstName} {app.user.lastName}</div>
+                                  <div className="text-xs text-muted-foreground">{app.user.email}</div>
+                                </div>
+                                {/* Add more profile info as needed */}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => window.open(`/profile/${app.user._id}`, '_blank')}
+                                >
+                                  View Profile
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -642,96 +717,27 @@ const RecruiterDashboard = () => {
                 ) : (
                   <div className="space-y-4">
                     {applications.map((application) => (
-                      <Card key={application._id} className="overflow-hidden
-                        hover:shadow-md transition-shadow duration-200">
+                      <Card key={application._id} className="overflow-hidden hover:shadow-md transition-shadow duration-200">
                         <CardContent className="p-0">
                           <div className="md:flex">
                             <div className="p-6 flex-1">
                               <div className="flex items-start justify-between">
                                 <div>
                                   <div className="flex items-center gap-3">
-                                    <h3 className="text-lg font-semibold">{application.applicantName}</h3>
-                                    <Badge 
-                                       variant={
-                                        application.status === 'pending' ? 'outline' :
-                                        application.status === 'reviewed' ? 'secondary' :
-                                        application.status === 'interview' ? 'default' :
-                                        application.status === 'hired' ? 'secondary' : 'destructive'
-                                      }
-                                      className="capitalize"
-                                    >
-                                      {application.status}
-                                    </Badge>
+                                    <h3 className="text-lg font-semibold">{application.applicant?.firstName} {application.applicant?.lastName}</h3>
                                   </div>
                                   <p className="text-muted-foreground">{application.jobTitle}</p>
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    {application.skills?.slice(0, 3).map((skill, i) => (
-                                      <Badge key={i} variant="secondary" className="text-xs">
-                                        {skill}
-                                      </Badge>
-                                    ))}
-                                    {application.skills?.length > 3 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        +{application.skills.length - 3} more
-                                      </Badge>
-                                    )}
-                                  </div>
+                                  <div className="text-xs text-muted-foreground">{application.applicant?.email}</div>
                                   <p className="text-sm text-muted-foreground mt-2">
                                     Applied on {new Date(application.appliedAt).toLocaleDateString()}
                                   </p>
                                 </div>
                                 <div className="flex gap-2">
-                                  <Button variant="outline" size="sm" asChild>
-                                    <a 
-                                      href={application.resume} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-1"
-                                    >
-                                      <FileText className="h-4 w-4" />
-                                      <span className="hidden sm:inline">Resume</span>
-                                    </a>
+                                  <Button variant="outline" size="sm" onClick={() => window.open(`/profile/${application.applicant?._id}`, '_blank')}>
+                                    View Profile
                                   </Button>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="outline" size="sm" className="h-9">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">Actions</span>
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>Update Status</DropdownMenuLabel>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onSelect={() => updateApplicationStatus(application._id, 'reviewed')}>
-                                        <CheckCircle2 className="mr-2 h-4 w-4 text-blue-500" />
-                                        Mark as Reviewed
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onSelect={() => updateApplicationStatus(application._id, 'interview')}>
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-amber-500" />
-                                        Schedule Interview
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onSelect={() => updateApplicationStatus(application._id, 'hired')}>
-                                        <ThumbsUp className="mr-2 h-4 w-4 text-green-500" />
-                                        Mark as Hired
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem 
-                                        className="text-red-600"
-                                        onSelect={() => updateApplicationStatus(application._id, 'rejected')}
-                                      >
-                                        <XCircle className="mr-2 h-4 w-4" />
-                                        Reject Application
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
                                 </div>
                               </div>
-                              
-                              {application.coverLetter && (
-                                <div className="mt-4 text-sm text-muted-foreground">
-                                  <p className="font-medium">Cover Letter:</p>
-                                  <p className="line-clamp-2">{application.coverLetter}</p>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </CardContent>

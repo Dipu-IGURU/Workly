@@ -37,7 +37,11 @@ const JobSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
-  }
+  },
+  applicants: [{
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    appliedAt: { type: Date, default: Date.now }
+  }]
 });
 
 module.exports = mongoose.model('Job', JobSchema);

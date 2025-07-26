@@ -4,6 +4,10 @@ import JobCategories from "@/components/JobCategories";
 import FeaturedJobs from "@/components/FeaturedJobs";
 import Stats from "@/components/Stats";
 import Footer from "@/components/Footer";
+import JobAlerts from './JobAlerts';
+import { Route } from "lucide-react";
+
+
 
 const Index = () => {
   return (
@@ -14,6 +18,7 @@ const Index = () => {
       <FeaturedJobs />
       <Stats />
       <Footer />
+      <Route path="/job-alerts" element={<JobAlerts />} />
     </div>
   );
 };
