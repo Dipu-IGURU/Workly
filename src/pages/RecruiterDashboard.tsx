@@ -261,7 +261,7 @@ const RecruiterDashboard = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5001/api/applications/recruiter', {
+      const response = await fetch('http://localhost:5001/api/jobs/applications/recruiter', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

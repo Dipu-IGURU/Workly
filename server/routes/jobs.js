@@ -138,7 +138,7 @@ router.get('/:id/applicants', auth, async (req, res) => {
   }
 });
 
-// @route   GET api/applications/recruiter
+// @route   GET api/jobs/applications/recruiter
 // @desc    Get all applications for all jobs posted by the recruiter
 // @access  Private (Recruiter)
 router.get('/applications/recruiter', auth, async (req, res) => {
