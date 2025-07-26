@@ -38,6 +38,56 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Get user profile by ID (public)
+router.get('/:userId', async (req, res) => {
+  console.log('GET /api/profile/' + req.params.userId);
+  
+  try {
+    console.log('Searching for user with ID:', req.params.userId);
+    const user = await User.findById(req.params.userId).select('-password -tokens');
+    
+    console.log('User found:', user ? 'Yes' : 'No');
+    if (!user) {
+      console.log('User not found with ID:', req.params.userId);
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found',
+        receivedId: req.params.userId
+      });
+    }
+    
+    // Return basic profile information
+    const profileData = {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      ...user.profile
+    };
+    
+    console.log('Returning profile data for user:', user.email);
+    res.json({ 
+      success: true, 
+      user: profileData 
+    });
+    
+  } catch (error) {
+    console.error('Error in GET /api/profile/:userId:', {
+      error: error.message,
+      stack: error.stack,
+      params: req.params,
+      query: req.query
+    });
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching user profile', 
+      error: error.message 
+    });
+  }
+});
+
 // Update user profile
 router.put('/', auth, async (req, res) => {
   try {

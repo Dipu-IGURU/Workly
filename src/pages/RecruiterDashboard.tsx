@@ -595,7 +595,7 @@ const RecruiterDashboard = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => window.open(`/profile/${app.user._id}`, '_blank')}
+                                  onClick={() => navigate(`/profile/${app.user._id}`)}
                                 >
                                   View Profile
                                 </Button>
@@ -698,9 +698,13 @@ const RecruiterDashboard = () => {
                                   </p>
                                 </div>
                                 <div className="flex gap-2">
-                                  <Button variant="outline" size="sm" onClick={() => window.open(`/profile/${application.applicant?._id}`, '_blank')}>
-                                    View Profile
-                                  </Button>
+                                  <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => navigate(`/profile/${application.applicant?._id}`)}
+                              >
+                                View Profile
+                              </Button>
                                 </div>
                               </div>
                             </div>

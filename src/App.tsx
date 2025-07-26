@@ -12,6 +12,7 @@ import RecruiterDashboard from "./pages/RecruiterDashboard";
 import MyProfile from "./pages/MyProfile";
 import Resume from "./pages/Resume";
 import AppliedJobs from "./pages/AppliedJobs";
+import ViewProfile from "./pages/ViewProfile";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import { useEffect, useState } from 'react';
@@ -153,6 +154,14 @@ const App = () => {
                 <div className="py-6">
                   <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                     <AppliedJobs />
+                  </div>
+                </div>
+              } />
+              
+              <Route path="/profile/:userId" element={
+                <div className="py-6">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                    <ViewProfile />
                   </div>
                 </div>
               } />
