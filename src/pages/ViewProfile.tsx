@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,8 @@ interface UserProfile {
   skills?: string[];
   experienceList?: Experience[];
   educationList?: Education[];
+  interviewStatus?: 'pending' | 'approved' | 'rejected';
+  applicationId?: string; // To track which application this profile is associated with
 }
 
 interface ApiResponse {
@@ -49,9 +51,13 @@ interface ApiResponse {
 
 const ViewProfile = () => {
   const { userId } = useParams<{ userId: string }>();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const applicationId = searchParams.get('applicationId') || undefined;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -72,6 +78,74 @@ const ViewProfile = () => {
     return skills.join(', ');
   };
 
+  const handleInterviewAction = async (status: 'approved' | 'rejected') => {
+    // Use applicationId from URL params first, then fall back to profile.applicationId
+    const appId = applicationId || profile?.applicationId;
+    
+    if (!appId) {
+      console.error('No application ID found in URL or profile:', { 
+        applicationIdFromUrl: applicationId,
+        applicationIdFromProfile: profile?.applicationId 
+      });
+      
+      toast({
+        title: 'Error',
+        description: 'No application ID found. Please try again from the applications list.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setUpdatingStatus(true);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+      
+      console.log('Updating application status:', { applicationId: appId, status });
+      
+      const response = await fetch(`http://localhost:5001/api/applications/${appId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || `Failed to ${status === 'approved' ? 'approve' : 'reject'} application`);
+      }
+
+      // Update the local profile state with the new status
+      setProfile(prev => prev ? { 
+        ...prev, 
+        interviewStatus: status,
+        applicationId: appId // Ensure applicationId is set
+      } : null);
+      
+      const actionText = status === 'approved' ? 'approved for interview' : 'rejected';
+      toast({
+        title: 'Success',
+        description: `Candidate has been ${actionText}`,
+      });
+      
+    } catch (error: any) {
+      console.error('Error updating interview status:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update application status',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (!userId) {
@@ -81,15 +155,27 @@ const ViewProfile = () => {
       }
 
       try {
-        console.log('Fetching profile for user ID:', userId);
+        console.log('Fetching profile for user ID:', userId, 'with applicationId:', applicationId);
         setError(null);
         setLoading(true);
         
-        const response = await fetch(`http://localhost:5001/api/profile/${userId}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        // Build the URL with applicationId as a query parameter if it exists
+        const url = new URL(`http://localhost:5001/api/auth/profile/${userId}`);
+        if (applicationId) {
+          url.searchParams.append('applicationId', applicationId);
+        }
+        
+        const token = localStorage.getItem('token');
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        
+        // Add authorization header if token exists
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(url.toString(), { headers });
         
         console.log('Response status:', response.status);
         
@@ -100,19 +186,20 @@ const ViewProfile = () => {
           throw new Error(data.message || `HTTP error! status: ${response.status}`);
         }
 
-        if (data.success && data.user) {
-          console.log('Profile data received:', data.user);
-          // Ensure arrays are always defined
-          const userData = {
-            ...data.user,
-            skills: data.user.skills || [],
-            experienceList: data.user.experienceList || [],
-            educationList: data.user.educationList || []
-          };
-          setProfile(userData);
-        } else {
-          throw new Error(data.message || 'No user data received');
+        if (!data.user) {
+          throw new Error('No user data received');
         }
+
+        // Ensure applicationId is set in the profile and provide default values for arrays
+        const profileData: UserProfile = {
+          ...data.user,
+          applicationId: applicationId || data.user.applicationId,
+          skills: data.user.skills || [],
+          experienceList: data.user.experienceList || [],
+          educationList: data.user.educationList || []
+        };
+        
+        setProfile(profileData);
       } catch (error: any) {
         console.error('Error in fetchProfile:', error);
         const errorMessage = error.message || 'Failed to load profile. Please try again.';
@@ -128,7 +215,7 @@ const ViewProfile = () => {
     };
 
     fetchProfile();
-  }, [userId, navigate, toast]);
+  }, [userId, applicationId, navigate, toast]);
 
   if (loading) {
     return (
@@ -330,6 +417,27 @@ const ViewProfile = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Interview Action Buttons - Only show for recruiters */}
+      {profile?.role !== 'recruiter' && (
+        <div className="mt-6 flex justify-end space-x-4">
+          <Button 
+            variant="outline" 
+            className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
+            disabled={updatingStatus}
+            onClick={() => handleInterviewAction('rejected')}
+          >
+            {updatingStatus ? 'Updating...' : 'Reject'}
+          </Button>
+          <Button 
+            variant="default"
+            disabled={updatingStatus}
+            onClick={() => handleInterviewAction('approved')}
+          >
+            {updatingStatus ? 'Updating...' : 'Approve for Interview'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

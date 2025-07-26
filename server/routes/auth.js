@@ -187,19 +187,28 @@ router.get('/verify-token', async (req, res) => {
 });
 
 // Get user profile endpoint
-router.get('/profile', async (req, res) => {
+router.get('/profile/:id?', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
+    const { id: userId } = req.params;
+    const { applicationId } = req.query;
     
-    if (!token) {
+    let user;
+    
+    // If userId is provided, get that user's profile (public info only)
+    if (userId) {
+      user = await User.findById(userId).select('-password -resetPasswordToken -resetPasswordExpire');
+    } 
+    // Otherwise, get the authenticated user's profile
+    else if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      user = await User.findById(decoded.userId);
+    } else {
       return res.status(401).json({
         success: false,
-        message: 'No token provided'
+        message: 'No token provided and no user ID specified'
       });
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
 
     if (!user) {
       return res.status(404).json({
@@ -208,24 +217,30 @@ router.get('/profile', async (req, res) => {
       });
     }
 
+    // Prepare user data
+    const userData = {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      company: user.company,
+      ...user.profile,
+      // Include applicationId in the response if provided in query params
+      ...(applicationId && { applicationId })
+    };
+
     res.json({
       success: true,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        company: user.company,
-        profile: user.profile
-      }
+      user: userData
     });
 
   } catch (error) {
-    console.error('Profile error:', error);
-    res.status(401).json({
+    console.error('Error fetching profile:', error);
+    res.status(500).json({
       success: false,
-      message: 'Invalid token'
+      message: 'Server error',
+      error: error.message
     });
   }
 });

@@ -66,6 +66,10 @@ const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [appliedJobs, setAppliedJobs] = useState<JobApplication[]>([]);
+  const [appStats, setAppStats] = useState({
+    total: 0,
+    changeFromLastWeek: 0
+  });
 
   // Navigation is now handled by DashboardSidebar component
 
@@ -215,34 +219,58 @@ const UserDashboard: React.FC = () => {
     checkAuthAndFetchProfile();
   }, [navigate, toast]);
 
-  useEffect(() => {
-    // Fetch applied jobs after authentication
-    const fetchAppliedJobs = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        const response = await fetch('http://localhost:5001/api/profile/applied-jobs', {
-          headers: { 'Authorization': `Bearer ${token}` }
+  // Fetch application statistics
+  const fetchApplicationStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await fetch('http://localhost:5001/api/profile/applied-jobs/stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const data = await response.json();
+      if (data.success && data.stats) {
+        setAppStats({
+          total: data.stats.total,
+          changeFromLastWeek: data.stats.changeFromLastWeek
         });
-        const data = await response.json();
-        if (data.success && Array.isArray(data.jobs)) {
-          setAppliedJobs(
-            data.jobs.map((item: any) => ({
-              id: item.job._id,
-              title: item.job.title,
-              company: item.job.company,
-              location: item.job.location,
-              type: item.job.type,
-              date: item.appliedAt,
-              // Add more fields as needed
-            }))
-          );
-        }
-      } catch (err) {
-        // Optionally handle error
       }
-    };
+    } catch (error) {
+      console.error('Error fetching application stats:', error);
+    }
+  };
+
+  // Fetch applied jobs after authentication
+  const fetchAppliedJobs = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await fetch('http://localhost:5001/api/profile/applied-jobs', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success && Array.isArray(data.jobs)) {
+        setAppliedJobs(
+          data.jobs.map((item: any) => ({
+            id: item.job._id,
+            title: item.job.title,
+            company: item.job.company,
+            location: item.job.location,
+            type: item.job.type,
+            date: item.appliedAt,
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('Error fetching applied jobs:', err);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
     fetchAppliedJobs();
+    fetchApplicationStats();
   }, []);
 
   const handleLogout = () => {
@@ -319,8 +347,14 @@ const UserDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Applications Sent</p>
-                <h3 className="text-2xl font-bold mt-1">12</h3>
-                <p className="text-sm text-green-600 mt-1">+2 from last week</p>
+                <h3 className="text-2xl font-bold mt-1">{appStats.total}</h3>
+                {appStats.changeFromLastWeek !== 0 && (
+                  <p className={`text-sm mt-1 ${
+                    appStats.changeFromLastWeek >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {appStats.changeFromLastWeek >= 0 ? '+' : ''}{appStats.changeFromLastWeek} from last week
+                  </p>
+                )}
               </div>
               <div className="p-3 rounded-full bg-blue-50">
                 <FileText className="w-6 h-6 text-blue-600" />

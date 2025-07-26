@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const router = express.Router();
+const moment = require('moment');
 
 // Parse JSON request body
 router.use(express.json());
@@ -35,6 +36,39 @@ router.get('/', auth, async (req, res) => {
     res.json({ success: true, profile: req.user.profile || {} });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching profile', error: error.message });
+  }
+});
+
+// Get current user's applied jobs
+router.get('/applied-jobs', auth, async (req, res) => {
+  try {
+    // Populate the appliedJobs array with job details
+    const user = await User.findById(req.user._id)
+      .populate('appliedJobs.job', 'title company location type salary description requirements')
+      .select('appliedJobs');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const jobs = user.appliedJobs.map(item => ({
+      _id: item._id,
+      job: item.job,
+      appliedAt: item.appliedAt,
+      status: item.status || 'applied'
+    }));
+
+    res.json({ 
+      success: true, 
+      jobs 
+    });
+  } catch (error) {
+    console.error('Error fetching applied jobs:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching applied jobs', 
+      error: error.message 
+    });
   }
 });
 
@@ -130,6 +164,61 @@ router.get('/applied-jobs', auth, async (req, res) => {
     res.json({ success: true, jobs: user.appliedJobs });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
+// Get application statistics (count and change from last week)
+router.get('/applied-jobs/stats', auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    // Calculate date ranges
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    
+    // Get current week applications count
+    const currentWeekCount = await User.aggregate([
+      { $match: { _id: userId } },
+      { $unwind: '$appliedJobs' },
+      { $match: { 'appliedJobs.appliedAt': { $gte: oneWeekAgo } } },
+      { $count: 'count' }
+    ]);
+    
+    // Get last week applications count
+    const lastWeekCount = await User.aggregate([
+      { $match: { _id: userId } },
+      { $unwind: '$appliedJobs' },
+      { $match: { 
+        'appliedJobs.appliedAt': { 
+          $gte: twoWeeksAgo,
+          $lt: oneWeekAgo
+        } 
+      }},
+      { $count: 'count' }
+    ]);
+    
+    // Calculate the difference
+    const currentCount = currentWeekCount[0]?.count || 0;
+    const lastCount = lastWeekCount[0]?.count || 0;
+    const changeFromLastWeek = currentCount - lastCount;
+    
+    res.json({
+      success: true,
+      stats: {
+        total: currentCount,
+        changeFromLastWeek: changeFromLastWeek,
+        changePercentage: lastCount > 0 ? Math.round((changeFromLastWeek / lastCount) * 100) : 100
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching application stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching application statistics',
+      error: error.message
+    });
   }
 });
 

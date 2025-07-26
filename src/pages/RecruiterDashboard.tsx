@@ -82,6 +82,14 @@ const RecruiterDashboard = () => {
   const [user, setUser] = useState<UserData | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [applicationStats, setApplicationStats] = useState({
+    total: 0,
+    pending: 0,
+    reviewed: 0,
+    interview: 0,
+    rejected: 0,
+    hired: 0
+  });
   const [loading, setLoading] = useState(true);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
@@ -203,19 +211,24 @@ const RecruiterDashboard = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5001/api/jobs/applications/recruiter', {
+      const response = await fetch('http://localhost:5001/api/applications/recruiter/applications', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+        },
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch applications');
-      }
-
       const data = await response.json();
       if (data.success) {
-        setApplications(data.data || []);
+        setApplications(data.applications);
+        if (data.counts) {
+          setApplicationStats({
+            total: data.counts.total || 0,
+            pending: data.counts.pending || 0,
+            reviewed: data.counts.reviewed || 0,
+            interview: data.counts.interview || 0,
+            rejected: data.counts.rejected || 0,
+            hired: data.counts.hired || 0
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching applications:', error);
@@ -395,23 +408,47 @@ const RecruiterDashboard = () => {
           <div className="lg:col-span-3">
             <Tabs defaultValue="overview" className="space-y-6">
               <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="overview" className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  Overview
+                  {applicationStats.interview > 0 && (
+                    <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
+                      {applicationStats.interview}
+                    </span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="jobs">Job Posts</TabsTrigger>
                 <TabsTrigger value="candidates">Candidates</TabsTrigger>
                 <TabsTrigger value="applications">Applications</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Active Job Posts</CardTitle>
-                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium">
+                        Total Applications
+                      </CardTitle>
+                      <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{activeJobPosts}</div>
+                      <div className="text-2xl font-bold">{applicationStats.total}</div>
                       <p className="text-xs text-muted-foreground">
-                        {jobsThisMonth} this month
+                        {applicationStats.pending} pending review
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Ready for Interview
+                      </CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-primary">{applicationStats.interview}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {applicationStats.reviewed} under review
                       </p>
                     </CardContent>
                   </Card>
@@ -479,7 +516,7 @@ const RecruiterDashboard = () => {
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  onClick={() => window.open(`/profile/${application.applicant?._id}`, '_blank')}
+                                  onClick={() => window.open(`/profile/${application.applicant?._id}?applicationId=${application._id}`, '_blank')}
                                 >
                                   View Profile
                                 </Button>
