@@ -503,35 +503,7 @@ const UserDashboard: React.FC = () => {
         </CardHeader>
         <CardContent className="p-0">
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
-            {/* This section is currently using mock data, will be updated to fetch from backend */}
-            {/* For now, it will show the mock data as per the original file */}
-            {/* <div key={`rec-${job.id}`} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <Briefcase className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium">{job.title}</h4>
-                    <p className="text-sm text-gray-600">{job.company}</p>
-                    <div className="flex items-center mt-2 text-xs text-gray-500 space-x-3">
-                      <span className="flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {job.location}
-                      </span>
-                      <span className="flex items-center">
-                        <DollarSign className="w-3 h-3 mr-1" />
-                        {job.salary}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded">
-                        {job.type}
-                      </span>
-                      <Button size="sm">Apply Now</Button>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
+            
           </div>
         </CardContent>
       </Card>
