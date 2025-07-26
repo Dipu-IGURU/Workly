@@ -368,7 +368,13 @@ const UserDashboard: React.FC = () => {
               <CardTitle>Recent Applications</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">Track your job applications</p>
             </div>
-            <Button variant="outline" size="sm">View All</Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/applied-jobs')}
+            >
+              View All
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
