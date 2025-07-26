@@ -57,11 +57,25 @@ interface Job {
   company: string;
   location: string;
   type: string;
-  description: string;
-  requirements: string;
+  status: 'draft' | 'active' | 'closed';
   createdAt: string;
-  applicants: Array<{ user: string; appliedAt: string }>;
-  postedBy: string;
+  updatedAt?: string;
+  description?: string;
+  requirements?: string[];
+  skills?: string[];
+  experience?: string;
+  salary?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+    period?: string;
+  };
+  applicants?: number;
+  views?: number;
+  postedBy?: string;
+  isRemote?: boolean;
+  applicationDeadline?: string;
+  isActive?: boolean;
 }
 
 interface Application {
@@ -153,48 +167,70 @@ const RecruiterDashboard = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.log('No token found, redirecting to login');
+        console.error('No authentication token found in localStorage');
         navigate('/login');
         return;
       }
-      
-      console.log('Fetching jobs for recruiter...');
 
-      const response = await fetch('http://localhost:5001/api/jobs', {
-        method: 'GET',
+      console.log('Fetching recruiter jobs...');
+      const response = await fetch('http://localhost:5001/api/jobs/my-jobs', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
       });
+
+      console.log('Jobs API Response Status:', response.status);
       
       if (!response.ok) {
         if (response.status === 401) {
+          // Try to refresh token
+          const refreshResponse = await fetch('http://localhost:5001/api/auth/refresh-token', {
+            method: 'POST',
+            credentials: 'include',
+          });
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            if (refreshData.token) {
+              localStorage.setItem('token', refreshData.token);
+              // Retry the request with new token
+              return fetchJobs();
+            }
+          }
+          // If refresh fails, redirect to login
           localStorage.removeItem('token');
           navigate('/login');
           return;
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Jobs response:', data);
-      
-      if (data.success) {
-        setJobs(data.data || []);
-        console.log('Jobs loaded successfully:', data.data?.length || 0);
-      } else {
-        throw new Error(data.message || 'Failed to fetch jobs');
+        
+        const errorText = await response.text();
+        console.error('Jobs API Error:', errorText);
+        throw new Error(`Failed to fetch jobs: ${response.status}`);
       }
 
-    } catch (error: any) {
-      console.error('Error fetching jobs:', error);
+      const data = await response.json();
+      console.log('Jobs API Response:', data);
       
-      // Show user-friendly error message
+      if (data && data.success) {
+        const validJobs = Array.isArray(data.jobs) ? data.jobs : [];
+        console.log(`Loaded ${validJobs.length} jobs`);
+        setJobs(validJobs);
+        
+        // If no applications loaded yet, try to fetch them again
+        if (applications.length === 0) {
+          fetchApplications();
+        }
+      } else {
+        console.error('Failed to load jobs:', data?.message || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Error in fetchJobs:', error);
       toast({
-        title: "Error",
-        description: "Failed to load jobs. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load job postings. Please refresh the page.',
+        variant: 'destructive',
       });
     } finally {
       setJobsLoading(false);
@@ -207,45 +243,171 @@ const RecruiterDashboard = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
+        console.error('No authentication token found in localStorage');
         navigate('/login');
         return;
       }
 
-      const response = await fetch('http://localhost:5001/api/applications/recruiter/applications', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (data.success) {
-        setApplications(data.applications);
-        if (data.counts) {
-          setApplicationStats({
-            total: data.counts.total || 0,
-            pending: data.counts.pending || 0,
-            reviewed: data.counts.reviewed || 0,
-            interview: data.counts.interview || 0,
-            rejected: data.counts.rejected || 0,
-            hired: data.counts.hired || 0
+      console.log('Fetching applications...');
+      
+      try {
+        const response = await fetch('http://localhost:5001/api/applications/recruiter/applications', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
+        console.log('API Response Status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          // If unauthorized, try to refresh token
+          if (response.status === 401) {
+            console.log('Token might be expired, attempting to refresh...');
+            const refreshResponse = await fetch('http://localhost:5001/api/auth/refresh-token', {
+              method: 'POST',
+              credentials: 'include',
+            });
+            
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              if (refreshData.token) {
+                localStorage.setItem('token', refreshData.token);
+                // Retry the original request with the new token
+                return fetchApplications();
+              }
+            }
+            // If refresh fails, redirect to login
+            localStorage.removeItem('token');
+            navigate('/login');
+            return;
+          }
+          
+          const errorText = await response.text();
+          console.error('API Error Response:', errorText);
+          
+          // Show user-friendly error message
+          let errorMessage = 'Failed to load applications';
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            console.error('Error parsing error response:', e);
+          }
+          
+          toast({
+            title: 'Error',
+            description: errorMessage,
+            variant: 'destructive',
           });
+          return;
         }
+        
+        const data = await response.json();
+        console.log('API Response Data:', data);
+        
+        if (data && data.success) {
+          // Ensure we have valid application data
+          const validApplications = Array.isArray(data.applications) 
+            ? data.applications.filter(app => app && app._id && app.applicant)
+            : [];
+            
+          console.log(`Loaded ${validApplications.length} valid applications`);
+          
+          // Set applications with the filtered list
+          setApplications(validApplications);
+          
+          // Calculate stats based on the actual data if counts are not provided
+          const stats = data.counts || {
+            total: validApplications.length,
+            pending: validApplications.filter(app => app.status === 'pending').length,
+            reviewed: validApplications.filter(app => app.status === 'reviewed').length,
+            interview: validApplications.filter(app => app.status === 'interview').length,
+            rejected: validApplications.filter(app => app.status === 'rejected').length,
+            hired: validApplications.filter(app => app.status === 'hired').length
+          };
+          
+          console.log('Setting application stats:', stats);
+          setApplicationStats(stats);
+          return; // Success, exit the function
+        } else {
+          console.error('API request was not successful:', data?.message || 'No success flag in response');
+          throw new Error(data?.message || 'Invalid response format from server');
+        }
+      } catch (error) {
+        console.error('Error in fetchApplications:', error);
+        throw error; // Re-throw to be caught by the outer catch
       }
+      
     } catch (error) {
-      console.error('Error fetching applications:', error);
+      console.error('Failed to fetch applications:', error);
+      
+      // Show a user-friendly error message
       toast({
-        title: "Error",
-        description: "Failed to load applications. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load applications. Please try again.',
+        variant: 'destructive',
       });
+      
+      // If it's an authentication error, redirect to login
+      if (error.message.includes('401') || error.message.includes('unauthorized')) {
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
     } finally {
       setApplicationsLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('RecruiterDashboard mounted, user:', user);
     if (user) {
+      console.log('User is authenticated, fetching data...');
       fetchJobs();
       fetchApplications();
+    } else {
+      console.log('No user found, checking localStorage...');
+      const storedUser = localStorage.getItem('user');
+      const storedToken = localStorage.getItem('token');
+      console.log('Stored user:', storedUser);
+      console.log('Stored token exists:', !!storedToken);
+      
+      if (storedToken) {
+        console.log('Attempting to fetch user profile with stored token...');
+        // Try to fetch user profile with stored token
+        fetch('http://localhost:5001/api/auth/profile', {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`,
+          },
+        })
+          .then(response => {
+            console.log('Profile response status:', response.status);
+            if (!response.ok) throw new Error('Failed to fetch profile');
+            return response.json();
+          })
+          .then(data => {
+            console.log('Profile data:', data);
+            if (data.success && data.user) {
+              setUser(data.user);
+              localStorage.setItem('user', JSON.stringify(data.user));
+            } else {
+              console.error('Invalid profile response:', data);
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              navigate('/login');
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching profile:', error);
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            navigate('/login');
+          });
+      } else {
+        console.log('No stored token, redirecting to login');
+        navigate('/login');
+      }
     }
   }, [user]);
 
@@ -322,6 +484,19 @@ const RecruiterDashboard = () => {
   const applicationsThisWeek = applications.filter(app => new Date(app.appliedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
   const interviewsScheduled = applications.filter(app => app.status === 'interview').length;
   const interviewsThisWeek = applications.filter(app => app.status === 'interview' && new Date(app.appliedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
+
+  // Calculate statistics
+  const totalApplications = applicationStats.total || 0;
+  const pendingReview = applicationStats.pending || 0;
+  const underReview = applicationStats.reviewed || 0;
+  const interviewScheduled = applicationStats.interview || 0;
+  const rejected = applicationStats.rejected || 0;
+  const hired = applicationStats.hired || 0;
+  
+  // Calculate job post stats
+  const activeJobs = jobs.filter(job => job.status === 'active').length;
+  const draftJobs = jobs.filter(job => job.status === 'draft').length;
+  const closedJobs = jobs.filter(job => job.status === 'closed').length;
 
   if (loading) {
     return (
@@ -426,55 +601,49 @@ const RecruiterDashboard = () => {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Total Applications
-                      </CardTitle>
-                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium">Active Job Posts</CardTitle>
+                      <Briefcase className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{applicationStats.total}</div>
+                      <div className="text-2xl font-bold">{activeJobs}</div>
                       <p className="text-xs text-muted-foreground">
-                        {applicationStats.pending} pending review
+                        {draftJobs} in draft, {closedJobs} closed
                       </p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Ready for Interview
-                      </CardTitle>
+                      <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-primary">{applicationStats.interview}</div>
+                      <div className="text-2xl font-bold">{totalApplications}</div>
                       <p className="text-xs text-muted-foreground">
-                        {applicationStats.reviewed} under review
+                        {pendingReview} pending review
                       </p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Applications Received</CardTitle>
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{applicationsReceived}</div>
-                      <p className="text-xs text-muted-foreground">
-                        {applicationsThisWeek} this week
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Interviews Scheduled</CardTitle>
+                      <CardTitle className="text-sm font-medium">Interviews</CardTitle>
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {interviewsScheduled}
-                      </div>
+                      <div className="text-2xl font-bold">{interviewScheduled}</div>
                       <p className="text-xs text-muted-foreground">
-                        {interviewsThisWeek} this week
+                        {interviewsThisWeek} scheduled this week
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Hired</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{hired}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {rejected} not selected
                       </p>
                     </CardContent>
                   </Card>

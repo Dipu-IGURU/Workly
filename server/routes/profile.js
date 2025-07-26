@@ -1,34 +1,13 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Application = require('../models/Application');
 const router = express.Router();
 const moment = require('moment');
+const auth = require('../middleware/auth');
 
 // Parse JSON request body
 router.use(express.json());
-
-// Middleware to verify JWT token
-const auth = async (req, res, next) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({ _id: decoded.userId });
-    
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    req.user = user;
-    req.token = token;
-    next();
-  } catch (error) {
-    res.status(401).json({ success: false, message: 'Please authenticate' });
-  }
-};
 
 // Get user profile
 router.get('/', auth, async (req, res) => {
@@ -167,6 +146,60 @@ router.get('/applied-jobs', auth, async (req, res) => {
   }
 });
 
+// Get interview statistics (count and scheduled this week)
+router.get('/interview-stats', auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    // Calculate start of current week
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+    
+    // Find all applications with interview status for this user
+    const applications = await Application.find({
+      applicant: userId,
+      status: 'interview'
+    }).populate('jobId', 'title company');
+    
+    // Count interviews scheduled for this week
+    const interviewsThisWeek = applications.filter(app => {
+      return app.updatedAt >= startOfWeek;
+    }).length;
+    
+    // Get upcoming interviews (next 7 days)
+    const nextWeek = new Date(now);
+    nextWeek.setDate(now.getDate() + 7);
+    
+    const upcomingInterviews = applications
+      .filter(app => app.updatedAt >= now && app.updatedAt <= nextWeek)
+      .map(app => ({
+        id: app._id,
+        jobTitle: app.jobId?.title || 'Unknown Position',
+        company: app.jobId?.company || 'Unknown Company',
+        scheduledDate: app.updatedAt
+      }));
+    
+    res.json({
+      success: true,
+      stats: {
+        totalInterviews: applications.length,
+        interviewsThisWeek: interviewsThisWeek,
+        upcomingInterviews: upcomingInterviews
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching interview stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching interview statistics',
+      error: error.message
+    });
+  }
+});
+
 // Get application statistics (count and change from last week)
 router.get('/applied-jobs/stats', auth, async (req, res) => {
   try {
@@ -218,6 +251,103 @@ router.get('/applied-jobs/stats', auth, async (req, res) => {
       success: false,
       message: 'Error fetching application statistics',
       error: error.message
+    });
+  }
+});
+
+// Track profile view
+router.post('/:userId/view', auth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const viewerId = req.user._id;
+
+    // Don't track if user is viewing their own profile
+    if (userId === viewerId.toString()) {
+      return res.json({ success: true, message: 'Self-view not tracked' });
+    }
+
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        profileViews: {
+          viewer: viewerId,
+          viewedAt: new Date()
+        }
+      },
+      $set: { lastProfileView: new Date() }
+    });
+
+    res.json({ success: true, message: 'Profile view tracked' });
+  } catch (error) {
+    console.error('Error tracking profile view:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error tracking profile view',
+      error: error.message 
+    });
+  }
+});
+
+// Get profile view statistics
+router.get('/:userId/view-stats', auth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Calculate date ranges
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Get view counts
+    const totalViews = user.profileViews.length;
+    
+    const thisMonthViews = user.profileViews.filter(view => 
+      view.viewedAt >= startOfMonth
+    ).length;
+    
+    const lastMonthViews = user.profileViews.filter(view => 
+      view.viewedAt >= startOfLastMonth && view.viewedAt <= endOfLastMonth
+    ).length;
+
+    // Calculate percentage change
+    let percentageChange = 0;
+    if (lastMonthViews > 0) {
+      percentageChange = Math.round(((thisMonthViews - lastMonthViews) / lastMonthViews) * 100);
+    } else if (thisMonthViews > 0) {
+      percentageChange = 100; // If no views last month, but some this month
+    }
+
+    // Get recent viewers (last 5)
+    const recentViewers = user.profileViews
+      .sort((a, b) => b.viewedAt - a.viewedAt)
+      .slice(0, 5)
+      .map(view => ({
+        viewerId: view.viewer,
+        viewedAt: view.viewedAt
+      }));
+
+    res.json({
+      success: true,
+      stats: {
+        totalViews,
+        thisMonthViews,
+        percentageChange,
+        lastView: user.lastProfileView,
+        recentViewers
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting profile view stats:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error getting profile view statistics',
+      error: error.message 
     });
   }
 });

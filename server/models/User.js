@@ -1,6 +1,19 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Schema for tracking profile views
+const profileViewSchema = new mongoose.Schema({
+  viewer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  viewedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
@@ -39,6 +52,11 @@ const userSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  profileViews: [profileViewSchema],
+  lastProfileView: {
+    type: Date,
+    default: null
   },
   profile: {
     avatar: String,

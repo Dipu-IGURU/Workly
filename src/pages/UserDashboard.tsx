@@ -70,45 +70,16 @@ const UserDashboard: React.FC = () => {
     total: 0,
     changeFromLastWeek: 0
   });
+  const [interviewStats, setInterviewStats] = useState({
+    total: 0,
+    thisWeek: 0
+  });
+  
+  const [profileStats, setProfileStats] = useState({
+    totalViews: 0,
+    percentageChange: 0
+  });
 
-  // Navigation is now handled by DashboardSidebar component
-
-  // Mock job applications data
-  // const jobApplications: JobApplication[] = [
-  //   {
-  //     id: '1',
-  //     title: 'Senior UI/UX Designer',
-  //     company: 'Facebook Inc.',
-  //     location: 'New York, USA',
-  //     type: 'Full Time',
-  //     status: 'applied',
-  //     date: '2023-10-15',
-  //     salary: '$60k - $80k',
-  //     logo: '/logos/facebook.png'
-  //   },
-  //   {
-  //     id: '2',
-  //     title: 'Product Designer',
-  //     company: 'Google',
-  //     location: 'Mountain View, CA',
-  //     type: 'Full Time',
-  //     status: 'interview',
-  //     date: '2023-10-10',
-  //     salary: '$70k - $90k',
-  //     logo: '/logos/google.png'
-  //   },
-  //   {
-  //     id: '3',
-  //     title: 'UI/UX Designer',
-  //     company: 'Dribbble',
-  //     location: 'Remote',
-  //     type: 'Part Time',
-  //     status: 'shortlisted',
-  //     date: '2023-10-05',
-  //     salary: '$50k - $70k',
-  //     logo: '/logos/dribbble.png'
-  //   },
-  // ];
 
   useEffect(() => {
     console.log('UserDashboard mounted, checking authentication...');
@@ -267,10 +238,65 @@ const UserDashboard: React.FC = () => {
     }
   };
 
+  // Fetch interview statistics
+  const fetchInterviewStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await fetch('http://localhost:5001/api/profile/interview-stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const data = await response.json();
+      if (data.success && data.stats) {
+        setInterviewStats({
+          total: data.stats.totalInterviews,
+          thisWeek: data.stats.interviewsThisWeek
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching interview stats:', error);
+    }
+  };
+
+  // Fetch profile view statistics
+  const fetchProfileStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      // First get the current user's ID
+      const userResponse = await fetch('http://localhost:5001/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const userData = await userResponse.json();
+      if (!userData.success || !userData.user) return;
+      
+      // Now fetch the profile view stats
+      const statsResponse = await fetch(`http://localhost:5001/api/profile/${userData.user._id}/view-stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const statsData = await statsResponse.json();
+      if (statsData.success && statsData.stats) {
+        setProfileStats({
+          totalViews: statsData.stats.totalViews,
+          percentageChange: statsData.stats.percentageChange
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile stats:', error);
+    }
+  };
+
   // Initial data fetch
   useEffect(() => {
     fetchAppliedJobs();
     fetchApplicationStats();
+    fetchInterviewStats();
+    fetchProfileStats();
   }, []);
 
   const handleLogout = () => {
@@ -368,8 +394,12 @@ const UserDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Interviews</p>
-                <h3 className="text-2xl font-bold mt-1">3</h3>
-                <p className="text-sm text-green-600 mt-1">2 scheduled this week</p>
+                <h3 className="text-2xl font-bold mt-1">{interviewStats.total}</h3>
+                {interviewStats.thisWeek > 0 && (
+                  <p className="text-sm text-green-600 mt-1">
+                    {interviewStats.thisWeek} scheduled this week
+                  </p>
+                )}
               </div>
               <div className="p-3 rounded-full bg-purple-50">
                 <CheckCircle className="w-6 h-6 text-purple-600" />
@@ -383,8 +413,14 @@ const UserDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Profile Views</p>
-                <h3 className="text-2xl font-bold mt-1">45</h3>
-                <p className="text-sm text-green-600 mt-1">+12% from last month</p>
+                <h3 className="text-2xl font-bold mt-1">{profileStats.totalViews}</h3>
+                {profileStats.percentageChange !== 0 && (
+                  <p className={`text-sm mt-1 ${
+                    profileStats.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {profileStats.percentageChange >= 0 ? '+' : ''}{profileStats.percentageChange}% from last month
+                  </p>
+                )}
               </div>
               <div className="p-3 rounded-full bg-green-50">
                 <User className="w-6 h-6 text-green-600" />
