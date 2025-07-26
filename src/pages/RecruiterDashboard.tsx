@@ -60,7 +60,7 @@ interface Job {
   description: string;
   requirements: string;
   createdAt: string;
-  applicants: number;
+  applicants: Array<{ user: string; appliedAt: string }>;
   postedBy: string;
 }
 
@@ -68,15 +68,14 @@ interface Application {
   _id: string;
   jobId: string;
   jobTitle: string;
-  applicantId: string;
-  applicantName: string;
-  email: string;
-  resume: string;
-  coverLetter: string;
-  status: 'pending' | 'reviewed' | 'interview' | 'rejected' | 'hired';
+  applicant: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
   appliedAt: string;
-  skills: string[];
-  experience: string;
+  status?: 'pending' | 'reviewed' | 'interview' | 'rejected' | 'hired';
 }
 
 const RecruiterDashboard = () => {
@@ -587,8 +586,8 @@ const RecruiterDashboard = () => {
                               </div>
                               <div className="flex flex-col md:flex-row md:items-center gap-2">
                                 <Badge variant="outline" className="text-xs">
-                                  {job.applicants && job.applicants.length > 0 ? `${job.applicants.length} Applicant${job.applicants.length > 1 ? 's' : ''}` : 'No Applicants'}
-                                </Badge>
+                                   {job.applicants && job.applicants.length > 0 ? `${job.applicants.length} Applicant${job.applicants.length > 1 ? 's' : ''}` : 'No Applicants'}
+                                 </Badge>
                                 <Button
                                   variant="secondary"
                                   size="sm"
