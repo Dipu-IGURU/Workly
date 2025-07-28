@@ -70,7 +70,7 @@ interface Job {
     currency?: string;
     period?: string;
   };
-  applicants?: number;
+  applicants?: Array<{_id: string, user: string, appliedAt: string}>;
   views?: number;
   postedBy?: string;
   isRemote?: boolean;
@@ -214,7 +214,7 @@ const RecruiterDashboard = () => {
       console.log('Jobs API Response:', data);
       
       if (data && data.success) {
-        const validJobs = Array.isArray(data.jobs) ? data.jobs : [];
+        const validJobs = Array.isArray(data.data) ? data.data : [];
         console.log(`Loaded ${validJobs.length} jobs`);
         setJobs(validJobs);
         
@@ -309,8 +309,8 @@ const RecruiterDashboard = () => {
         
         if (data && data.success) {
           // Ensure we have valid application data
-          const validApplications = Array.isArray(data.applications) 
-            ? data.applications.filter(app => app && app._id && app.applicant)
+          const validApplications = Array.isArray(data.data) 
+            ? data.data.filter(app => app && app._id && app.applicant)
             : [];
             
           console.log(`Loaded ${validApplications.length} valid applications`);
@@ -361,53 +361,10 @@ const RecruiterDashboard = () => {
   };
 
   useEffect(() => {
-    console.log('RecruiterDashboard mounted, user:', user);
-    if (user) {
-      console.log('User is authenticated, fetching data...');
+    if (user && user.role === 'recruiter') {
+      console.log('Fetching data for authenticated recruiter...');
       fetchJobs();
       fetchApplications();
-    } else {
-      console.log('No user found, checking localStorage...');
-      const storedUser = localStorage.getItem('user');
-      const storedToken = localStorage.getItem('token');
-      console.log('Stored user:', storedUser);
-      console.log('Stored token exists:', !!storedToken);
-      
-      if (storedToken) {
-        console.log('Attempting to fetch user profile with stored token...');
-        // Try to fetch user profile with stored token
-        fetch('http://localhost:5001/api/auth/profile', {
-          headers: {
-            'Authorization': `Bearer ${storedToken}`,
-          },
-        })
-          .then(response => {
-            console.log('Profile response status:', response.status);
-            if (!response.ok) throw new Error('Failed to fetch profile');
-            return response.json();
-          })
-          .then(data => {
-            console.log('Profile data:', data);
-            if (data.success && data.user) {
-              setUser(data.user);
-              localStorage.setItem('user', JSON.stringify(data.user));
-            } else {
-              console.error('Invalid profile response:', data);
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              navigate('/login');
-            }
-          })
-          .catch(error => {
-            console.error('Error fetching profile:', error);
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            navigate('/login');
-          });
-      } else {
-        console.log('No stored token, redirecting to login');
-        navigate('/login');
-      }
     }
   }, [user]);
 
