@@ -504,14 +504,15 @@ const RecruiterDashboard = () => {
   const interviewsThisWeek = applications.filter(app => app.status === 'interview' && new Date(app.appliedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
 
   // Calculate statistics
-  const totalApplications = applicationStats.total || 0;
-  const pendingReview = applicationStats.pending || 0;
+  const totalApplications = applications.length;
+  const pendingReview = applications.filter(app => app.status === 'pending').length;
   const underReview = applicationStats.reviewed || 0;
   const interviewScheduled = applicationStats.interview || 0;
   const rejected = applicationStats.rejected || 0;
   const hired = applicationStats.hired || 0;
   
   // Calculate job post stats
+  const totalJobs = jobs.length;
   const activeJobs = jobs.filter(job => job.status === 'active').length;
   const draftJobs = jobs.filter(job => job.status === 'draft').length;
   const closedJobs = jobs.filter(job => job.status === 'closed').length;
@@ -630,11 +631,11 @@ const RecruiterDashboard = () => {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <Card className="border-0 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-700">Active Job Posts</CardTitle>
+                      <CardTitle className="text-sm font-medium text-gray-700">Job Posts</CardTitle>
                       <Briefcase className="h-4 w-4 text-gray-400" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-gray-800">{activeJobs}</div>
+                      <div className="text-2xl font-bold text-gray-800">{totalJobs}</div>
                       <p className="text-xs text-gray-500">
                         {draftJobs} in draft, {closedJobs} closed
                       </p>
