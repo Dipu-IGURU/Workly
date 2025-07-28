@@ -638,7 +638,7 @@ const RecruiterDashboard = () => {
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Hired</CardTitle>
-                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{hired}</div>
@@ -750,10 +750,10 @@ const RecruiterDashboard = () => {
                                   </div>
                                   <div className="flex flex-col md:flex-row md:items-center gap-3">
                                     <div className="text-center">
-                                      <Badge variant="outline" className="text-xs bg-primary/10">
-                                        {job.applicants && job.applicants.length > 0 
-                                          ? `${job.applicants.length} Applicant${job.applicants.length > 1 ? 's' : ''}` 
-                                          : 'No Applicants'}
+                                       <Badge variant="outline" className="text-xs bg-primary/10">
+                                         {job.applicants && Array.isArray(job.applicants) && job.applicants.length > 0 
+                                           ? `${job.applicants.length} Applicant${job.applicants.length > 1 ? 's' : ''}` 
+                                           : 'No Applicants'}
                                       </Badge>
                                     </div>
                                     <Button
