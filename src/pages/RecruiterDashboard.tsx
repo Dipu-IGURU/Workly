@@ -22,6 +22,7 @@ import {
   XCircle 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL, mockJobs, mockApplications } from "@/lib/config";
 import { JobPostForm } from "@/components/JobPostForm";
 import { JobList } from "@/components/JobList";
 import { Input } from "@/components/ui/input";
@@ -123,7 +124,7 @@ const RecruiterDashboard = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5001/api/auth/profile', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -173,7 +174,7 @@ const RecruiterDashboard = () => {
       }
 
       console.log('Fetching recruiter jobs...');
-      const response = await fetch('http://localhost:5001/api/jobs/my-jobs', {
+      const response = await fetch(`${API_BASE_URL}/api/jobs/my-jobs`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -186,7 +187,7 @@ const RecruiterDashboard = () => {
       if (!response.ok) {
         if (response.status === 401) {
           // Try to refresh token
-          const refreshResponse = await fetch('http://localhost:5001/api/auth/refresh-token', {
+          const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
             method: 'POST',
             credentials: 'include',
           });
@@ -227,10 +228,12 @@ const RecruiterDashboard = () => {
       }
     } catch (error) {
       console.error('Error in fetchJobs:', error);
+      // If API fails, use mock data for preview
+      console.log('Using mock data for jobs');
+      setJobs(mockJobs);
       toast({
-        title: 'Error',
-        description: 'Failed to load job postings. Please refresh the page.',
-        variant: 'destructive',
+        title: 'Info',
+        description: 'Showing demo data (API unavailable)',
       });
     } finally {
       setJobsLoading(false);
@@ -251,7 +254,7 @@ const RecruiterDashboard = () => {
       console.log('Fetching applications...');
       
       try {
-        const response = await fetch('http://localhost:5001/api/applications/recruiter/applications', {
+        const response = await fetch(`${API_BASE_URL}/api/applications/recruiter/applications`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -265,7 +268,7 @@ const RecruiterDashboard = () => {
           // If unauthorized, try to refresh token
           if (response.status === 401) {
             console.log('Token might be expired, attempting to refresh...');
-            const refreshResponse = await fetch('http://localhost:5001/api/auth/refresh-token', {
+            const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
               method: 'POST',
               credentials: 'include',
             });
@@ -343,18 +346,23 @@ const RecruiterDashboard = () => {
     } catch (error) {
       console.error('Failed to fetch applications:', error);
       
-      // Show a user-friendly error message
-      toast({
-        title: 'Error',
-        description: 'Failed to load applications. Please try again.',
-        variant: 'destructive',
+      // If API fails, use mock data for preview
+      console.log('Using mock data for applications');
+      setApplications(mockApplications);
+      setApplicationStats({
+        total: mockApplications.length,
+        pending: mockApplications.filter(app => app.status === 'pending').length,
+        reviewed: mockApplications.filter(app => app.status === 'reviewed').length,
+        interview: mockApplications.filter(app => app.status === 'interview').length,
+        rejected: mockApplications.filter(app => app.status === 'rejected').length,
+        hired: mockApplications.filter(app => app.status === 'hired').length
       });
       
-      // If it's an authentication error, redirect to login
-      if (error.message.includes('401') || error.message.includes('unauthorized')) {
-        localStorage.removeItem('token');
-        navigate('/login');
-      }
+      // Show a user-friendly message
+      toast({
+        title: 'Info',
+        description: 'Showing demo data (API unavailable)',
+      });
     } finally {
       setApplicationsLoading(false);
     }
