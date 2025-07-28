@@ -2,14 +2,31 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, DollarSign, Bookmark } from "lucide-react";
+import { MapPin, Clock, DollarSign, Bookmark, ArrowLeft } from "lucide-react";
 import { useJobs } from "@/contexts/JobsContext";
 
+// Define job type
+type Job = {
+  _id: string;
+  company: string;
+  title: string;
+  description: string;
+  location: string;
+  date: string;
+  type: string;
+};
+
+type JobsResponse = {
+  data: Job[];
+  success: boolean;
+};
+
 const FeaturedJobs = () => {
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const { jobsVersion } = useJobs();
-  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isApplicationOpen, setIsApplicationOpen] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -19,13 +36,26 @@ const FeaturedJobs = () => {
     coverLetter: ''
   });
 
+  // Group jobs by company with proper typing
+  const companies = jobs.reduce<Record<string, Job[]>>((acc, job) => {
+    if (!acc[job.company]) {
+      acc[job.company] = [];
+    }
+    acc[job.company].push(job);
+    return acc;
+  }, {});
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         const response = await fetch('http://localhost:5001/api/jobs/public');
         if (response.ok) {
-          const data = await response.json().catch(() => ({ data: [] }));
-          setJobs(data.data || []);
+          const data: JobsResponse = await response.json().catch(() => ({ data: [], success: false }));
+          if (data.success && Array.isArray(data.data)) {
+            setJobs(data.data);
+          } else {
+            setJobs([]);
+          }
         } else {
           console.error('Failed to fetch jobs:', response.status);
         }
@@ -45,29 +75,18 @@ const FeaturedJobs = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Featured Jobs
+              Featured Companies
             </h2>
             <p className="text-lg text-muted-foreground">
-              Loading amazing opportunities...
+              Loading companies...
             </p>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-muted rounded-lg"></div>
-                      <div className="space-y-2">
-                        <div className="h-4 bg-muted rounded w-48"></div>
-                        <div className="h-3 bg-muted rounded w-32"></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-muted rounded w-3/4"></div>
-                    <div className="h-3 bg-muted rounded w-1/2"></div>
-                  </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <Card key={i} className="animate-pulse h-32">
+                <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+                  <div className="w-12 h-12 bg-muted rounded-lg mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-24"></div>
                 </CardContent>
               </Card>
             ))}
@@ -76,92 +95,145 @@ const FeaturedJobs = () => {
       </section>
     );
   }
-  return (
-    <section className="py-16 bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-            Featured Jobs
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            {jobs.length > 0 ? "Know your worth and find the job that qualify your life" : "No jobs posted yet. Be the first to post a job!"}
-          </p>
-        </div>
 
-        {jobs.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {jobs.slice(0, 6).map((job) => (
-              <Card key={job._id} className="hover:shadow-lg transition-shadow border border-border bg-job-card">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                        <span className="text-primary-foreground font-bold text-lg">
-                          {job.company.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground text-lg mb-1">
-                          {job.title}
-                        </h3>
-                        <p className="text-muted-foreground">{job.company}</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      <Bookmark className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <Badge variant="secondary">
-                      {job.type}
-                    </Badge>
-                  </div>
-
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                    {job.description.substring(0, 120)}...
-                  </p>
-
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{job.location}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{new Date(job.date).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
-                      {job.type}
-                    </Badge>
-                    <Button variant="outline" size="sm" onClick={() => {
-                      setSelectedJob(job);
-                      setIsApplicationOpen(true);
-                    }}>
-                      Apply Now
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No jobs available at the moment.</p>
-          </div>
-        )}
-
-        {jobs.length > 6 && (
-          <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Load More Listings
+  // If a company is selected, show their jobs
+  if (selectedCompany) {
+    const companyJobs = companies[selectedCompany] || [];
+    return (
+      <section className="py-16 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center mb-8">
+            <Button 
+              variant="ghost" 
+              onClick={() => setSelectedCompany(null)}
+              className="mr-4"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" /> Back to Companies
             </Button>
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
+              {selectedCompany} Jobs
+            </h2>
           </div>
-        )}
-      </div>
+          
+          {companyJobs.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {companyJobs.map((job) => (
+                <Card key={job._id} className="hover:shadow-lg transition-shadow border border-border bg-job-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                          <span className="text-primary-foreground font-bold text-lg">
+                            {job.company.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground text-lg mb-1">
+                            {job.title}
+                          </h3>
+                          <p className="text-muted-foreground">{job.company}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <Bookmark className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <Badge variant="secondary">
+                        {job.type}
+                      </Badge>
+                    </div>
+
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                      {job.description.substring(0, 120)}...
+                    </p>
+
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
+                      <div className="flex items-center space-x-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>{job.location}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{new Date(job.date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+                        {job.type}
+                      </Badge>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setSelectedJob(job);
+                        setIsApplicationOpen(true);
+                      }}>
+                        Apply Now
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">No jobs available for this company.</p>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
+  // Main view - show companies
+  return (
+    <>
+      <section className="py-16 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              Featured Companies
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              {Object.keys(companies).length > 0 
+                ? "Browse jobs by company" 
+                : "No companies with job postings yet."}
+            </p>
+          </div>
+
+          {Object.keys(companies).length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {Object.entries(companies).map(([companyName, companyJobs]) => (
+                <Card 
+                  key={companyName} 
+                  className="hover:shadow-lg transition-shadow border border-border bg-card cursor-pointer h-40 flex flex-col"
+                  onClick={() => setSelectedCompany(companyName)}
+                >
+                  <CardContent className="p-6 flex flex-col items-center justify-center flex-grow">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                      <span className="text-primary text-2xl font-bold">
+                        {companyName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-center text-foreground">
+                      {companyName}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {companyJobs.length} {companyJobs.length === 1 ? 'job' : 'jobs'} available
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">
+                No companies with job postings at the moment.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+      
       {isApplicationOpen && selectedJob && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setIsApplicationOpen(false)}>
           <div className="relative z-50 w-full max-w-2xl bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
@@ -232,7 +304,7 @@ const FeaturedJobs = () => {
           </div>
         </div>
       )}
-    </section>
+    </>
   );
 };
 
