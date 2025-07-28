@@ -19,10 +19,11 @@ import {
   CheckCircle2, 
   Calendar as CalendarIcon, 
   ThumbsUp, 
-  XCircle 
+  XCircle,
+  ArrowRight
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { API_BASE_URL, mockJobs, mockApplications } from "@/lib/config";
+import { API_BASE_URL } from "@/lib/config";
 import { JobPostForm } from "@/components/JobPostForm";
 import { JobList } from "@/components/JobList";
 import { Input } from "@/components/ui/input";
@@ -58,11 +59,12 @@ interface Job {
   company: string;
   location: string;
   type: string;
-  status: 'draft' | 'active' | 'closed';
-  createdAt: string;
+  status?: 'draft' | 'active' | 'closed';
+  createdAt?: string;
+  date?: string;
   updatedAt?: string;
   description?: string;
-  requirements?: string[];
+  requirements?: string;
   skills?: string[];
   experience?: string;
   salary?: {
@@ -213,10 +215,11 @@ const RecruiterDashboard = () => {
 
       const data = await response.json();
       console.log('Jobs API Response:', data);
+      console.log('User ID from token:', user?.id);
       
       if (data && data.success) {
         const validJobs = Array.isArray(data.data) ? data.data : [];
-        console.log(`Loaded ${validJobs.length} jobs`);
+        console.log(`Loaded ${validJobs.length} jobs:`, validJobs);
         setJobs(validJobs);
         
         // If no applications loaded yet, try to fetch them again
@@ -228,12 +231,10 @@ const RecruiterDashboard = () => {
       }
     } catch (error) {
       console.error('Error in fetchJobs:', error);
-      // If API fails, use mock data for preview
-      console.log('Using mock data for jobs');
-      setJobs(mockJobs);
       toast({
-        title: 'Info',
-        description: 'Showing demo data (API unavailable)',
+        title: 'Error',
+        description: 'Failed to load jobs. Please try again later.',
+        variant: 'destructive',
       });
     } finally {
       setJobsLoading(false);
@@ -345,23 +346,16 @@ const RecruiterDashboard = () => {
       
     } catch (error) {
       console.error('Failed to fetch applications:', error);
+      let errorMessage = 'Failed to load applications. Please try again later.';
       
-      // If API fails, use mock data for preview
-      console.log('Using mock data for applications');
-      setApplications(mockApplications);
-      setApplicationStats({
-        total: mockApplications.length,
-        pending: mockApplications.filter(app => app.status === 'pending').length,
-        reviewed: mockApplications.filter(app => app.status === 'reviewed').length,
-        interview: mockApplications.filter(app => app.status === 'interview').length,
-        rejected: mockApplications.filter(app => app.status === 'rejected').length,
-        hired: mockApplications.filter(app => app.status === 'hired').length
-      });
+      if (error.message) {
+        errorMessage = error.message;
+      }
       
-      // Show a user-friendly message
       toast({
-        title: 'Info',
-        description: 'Showing demo data (API unavailable)',
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
       });
     } finally {
       setApplicationsLoading(false);
@@ -373,6 +367,19 @@ const RecruiterDashboard = () => {
       console.log('Fetching data for authenticated recruiter...');
       fetchJobs();
       fetchApplications();
+    }
+  }, [user]);
+
+  // Refresh data periodically
+  useEffect(() => {
+    if (user && user.role === 'recruiter') {
+      const interval = setInterval(() => {
+        console.log('Refreshing data...');
+        fetchJobs();
+        fetchApplications();
+      }, 30000); // Refresh every 30 seconds
+
+      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -393,12 +400,13 @@ const RecruiterDashboard = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5001/api/applications/${applicationId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ status })
       });
 
@@ -426,17 +434,62 @@ const RecruiterDashboard = () => {
     setApplicantsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/jobs/${jobId}/applicants`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/applicants`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Try to refresh token
+          const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            if (refreshData.token) {
+              localStorage.setItem('token', refreshData.token);
+              // Retry the request with new token
+              return handleViewApplicants(jobId, jobTitle);
+            }
+          }
+          // If refresh fails, redirect to login
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+        
+        throw new Error(`Failed to fetch applicants: ${response.status}`);
+      }
+
       const data = await response.json();
+      
       if (data.success && Array.isArray(data.applicants)) {
+        console.log(`Loaded ${data.applicants.length} applicants for job: ${jobTitle}`);
         setSelectedJobApplicants(data.applicants);
       } else {
+        console.log('No applicants found or invalid response format');
         setSelectedJobApplicants([]);
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error fetching applicants:', error);
       setSelectedJobApplicants([]);
+      toast({
+        title: "Error",
+        description: "Failed to load applicants. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setApplicantsLoading(false);
     }
@@ -485,17 +538,34 @@ const RecruiterDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">W</span>
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">W</span>
               </div>
-              <span className="ml-2 text-xl font-bold">Workly</span>
+              <span className="ml-2 text-xl font-bold text-gray-800">Workly</span>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-gray-600">
                 Welcome, {user.firstName}! ({user.company})
               </span>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  fetchJobs();
+                  fetchApplications();
+                  toast({
+                    title: "Refreshed",
+                    description: "Data has been refreshed successfully.",
+                  });
+                }}
+                className="flex items-center gap-2"
+                disabled={jobsLoading || applicationsLoading}
+              >
+                <Loader2 className={`w-4 h-4 ${(jobsLoading || applicationsLoading) ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
+                <ArrowRight className="w-4 h-4" />
                 Logout
               </Button>
             </div>
@@ -507,36 +577,35 @@ const RecruiterDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader className="text-center">
-                <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Briefcase className="w-10 h-10 text-primary-foreground" />
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="text-center pb-6">
+                <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Briefcase className="w-10 h-10 text-white" />
                 </div>
-                <CardTitle>{user.firstName} {user.lastName}</CardTitle>
-                <CardDescription>{user.email}</CardDescription>
-                <Badge variant="secondary" className="mt-2">Recruiter</Badge>
-                <p className="text-sm text-muted-foreground mt-1">{user.company}</p>
+                <CardTitle className="text-xl font-bold text-gray-800">{user.firstName} {user.lastName}</CardTitle>
+                <Badge variant="secondary" className="mt-2 bg-gray-100 text-gray-700">Recruiter</Badge>
+                <p className="text-sm text-gray-500 mt-1">{user.company}</p>
               </CardHeader>
-              <CardContent>
-                <nav className="space-y-2">
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Briefcase className="w-4 h-4 mr-2" />
+              <CardContent className="pt-0">
+                <nav className="space-y-1">
+                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                    <Briefcase className="w-4 h-4 mr-3" />
                     Job Posts
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Users className="w-4 h-4 mr-2" />
+                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                    <Users className="w-4 h-4 mr-3" />
                     Candidates
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <FileText className="w-4 h-4 mr-2" />
+                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                    <FileText className="w-4 h-4 mr-3" />
                     Applications
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Calendar className="w-4 h-4 mr-2" />
+                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                    <Calendar className="w-4 h-4 mr-3" />
                     Interviews
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Settings className="w-4 h-4 mr-2" />
+                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                    <Settings className="w-4 h-4 mr-3" />
                     Settings
                   </Button>
                 </nav>
@@ -547,80 +616,75 @@ const RecruiterDashboard = () => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList>
-                <TabsTrigger value="overview" className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
+              <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200">
+                <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">1</div>
                   Overview
-                  {applicationStats.interview > 0 && (
-                    <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
-                      {applicationStats.interview}
-                    </span>
-                  )}
                 </TabsTrigger>
-                <TabsTrigger value="jobs">Job Posts</TabsTrigger>
-                <TabsTrigger value="candidates">Candidates</TabsTrigger>
-                <TabsTrigger value="applications">Applications</TabsTrigger>
+                <TabsTrigger value="jobs" className="text-gray-600">Job Posts</TabsTrigger>
+                <TabsTrigger value="candidates" className="text-gray-600">Candidates</TabsTrigger>
+                <TabsTrigger value="applications" className="text-gray-600">Applications</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  <Card>
+                  <Card className="border-0 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Active Job Posts</CardTitle>
-                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium text-gray-700">Active Job Posts</CardTitle>
+                      <Briefcase className="h-4 w-4 text-gray-400" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{activeJobs}</div>
-                      <p className="text-xs text-muted-foreground">
+                      <div className="text-2xl font-bold text-gray-800">{activeJobs}</div>
+                      <p className="text-xs text-gray-500">
                         {draftJobs} in draft, {closedJobs} closed
                       </p>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className="border-0 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium text-gray-700">Total Applications</CardTitle>
+                      <Users className="h-4 w-4 text-gray-400" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{totalApplications}</div>
-                      <p className="text-xs text-muted-foreground">
+                      <div className="text-2xl font-bold text-gray-800">{totalApplications}</div>
+                      <p className="text-xs text-gray-500">
                         {pendingReview} pending review
                       </p>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className="border-0 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Interviews</CardTitle>
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium text-gray-700">Interviews</CardTitle>
+                      <Calendar className="h-4 w-4 text-gray-400" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{interviewScheduled}</div>
-                      <p className="text-xs text-muted-foreground">
+                      <div className="text-2xl font-bold text-gray-800">{interviewScheduled}</div>
+                      <p className="text-xs text-gray-500">
                         {interviewsThisWeek} scheduled this week
                       </p>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className="border-0 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Hired</CardTitle>
-                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium text-gray-700">Hired</CardTitle>
+                      <CheckCircle2 className="h-4 w-4 text-gray-400" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{hired}</div>
-                      <p className="text-xs text-muted-foreground">
+                      <div className="text-2xl font-bold text-gray-800">{hired}</div>
+                      <p className="text-xs text-gray-500">
                         {rejected} not selected
                       </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                <Card>
+                <Card className="border-0 shadow-sm">
                   <CardHeader>
-                    <CardTitle>Recent Applications</CardTitle>
-                    <CardDescription>Latest candidate applications</CardDescription>
+                    <CardTitle className="text-lg font-bold text-gray-800">Recent Applications</CardTitle>
+                    <CardDescription className="text-gray-500">Latest candidate applications</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {applications
                         .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
                         .slice(0, 3)
@@ -638,28 +702,27 @@ const RecruiterDashboard = () => {
                           }
 
                           return (
-                            <div key={application._id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div key={application._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white">
                               <div>
-                                <h4 className="font-semibold">{application.applicant?.firstName} {application.applicant?.lastName}</h4>
-                                <p className="text-sm text-muted-foreground">
+                                <h4 className="font-semibold text-gray-800">{application.applicant?.firstName} {application.applicant?.lastName}</h4>
+                                <p className="text-sm text-gray-600">
                                   {application.jobTitle}
                                 </p>
-                                <p className="text-xs text-muted-foreground">{timeText}</p>
+                                <p className="text-xs text-gray-500">{timeText}</p>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => window.open(`/profile/${application.applicant?._id}?applicationId=${application._id}`, '_blank')}
-                                >
-                                  View Profile
-                                </Button>
-                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
+                                onClick={() => window.open(`/profile/${application.applicant?._id}?applicationId=${application._id}`, '_blank')}
+                              >
+                                View Profile
+                              </Button>
                             </div>
                           );
                         })}
                       {applications.length === 0 && (
-                        <div className="text-center py-4 text-muted-foreground">
+                        <div className="text-center py-8 text-gray-500">
                           No applications found
                         </div>
                       )}
@@ -672,50 +735,50 @@ const RecruiterDashboard = () => {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h2 className="text-2xl font-bold">Job Posts</h2>
-                      <p className="text-muted-foreground">Manage your job postings</p>
+                      <h2 className="text-2xl font-bold text-gray-800">Job Posts</h2>
+                      <p className="text-gray-600">Manage your job postings</p>
                     </div>
                     <JobPostForm onSuccess={handleJobPosted}>
-                      <Button>
+                      <Button className="bg-blue-600 hover:bg-blue-700">
                         <Plus className="w-4 h-4 mr-2" />
                         Post New Job
                       </Button>
                     </JobPostForm>
                   </div>
-                  <Card>
+                  <Card className="border-0 shadow-sm">
                     <CardContent className="p-6">
                       {jobsLoading ? (
                         <div className="flex justify-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                         </div>
                       ) : jobs.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Briefcase className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                          <h3 className="text-lg font-medium">No job posts yet</h3>
-                          <p className="text-sm">Start by posting your first job to attract candidates.</p>
+                        <div className="text-center py-8 text-gray-500">
+                          <Briefcase className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                          <h3 className="text-lg font-medium text-gray-800">No job posts yet</h3>
+                          <p className="text-sm text-gray-600">Start by posting your first job to attract candidates.</p>
                         </div>
                       ) : (
                         <div className="grid gap-4">
                           {jobs.map((job) => (
-                            <Card key={job._id} className="border-2 hover:shadow-lg transition-shadow">
+                            <Card key={job._id} className="border border-gray-200 hover:shadow-lg transition-shadow">
                               <CardContent className="p-6">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                   <div className="flex-1">
-                                    <h3 className="font-bold text-xl text-primary">{job.title}</h3>
-                                    <p className="text-muted-foreground text-sm mt-1">
+                                    <h3 className="font-bold text-xl text-blue-600">{job.title}</h3>
+                                    <p className="text-gray-600 text-sm mt-1">
                                       <span className="font-medium">{job.company}</span> &middot; {job.location} &middot; 
-                                      <Badge variant="secondary" className="ml-2">{job.type}</Badge>
+                                      <Badge variant="secondary" className="ml-2 bg-gray-100 text-gray-700">{job.type}</Badge>
                                     </p>
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                      Posted on {new Date(job.createdAt).toLocaleDateString()}
+                                    <p className="text-xs text-gray-500 mt-2">
+                                      Posted on {new Date(job.date || job.createdAt).toLocaleDateString()}
                                     </p>
-                                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
                                       {job.description}
                                     </p>
                                   </div>
                                   <div className="flex flex-col md:flex-row md:items-center gap-3">
                                     <div className="text-center">
-                                       <Badge variant="outline" className="text-xs bg-primary/10">
+                                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                                          {job.applicants && Array.isArray(job.applicants) && job.applicants.length > 0 
                                            ? `${job.applicants.length} Applicant${job.applicants.length > 1 ? 's' : ''}` 
                                            : 'No Applicants'}
@@ -725,7 +788,7 @@ const RecruiterDashboard = () => {
                                       variant="secondary"
                                       size="sm"
                                       onClick={() => handleViewApplicants(job._id, job.title)}
-                                      className="min-w-[120px]"
+                                      className="min-w-[120px] bg-gray-100 text-gray-700 hover:bg-gray-200"
                                     >
                                       <Eye className="w-4 h-4 mr-2" />
                                       View Applicants
@@ -749,29 +812,71 @@ const RecruiterDashboard = () => {
                         >
                           ×
                         </button>
-                        <h2 className="text-xl font-bold mb-4">Applicants for {selectedJobTitle}</h2>
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">Applicants for {selectedJobTitle}</h2>
+                        <p className="text-sm text-gray-600 mb-6">Total applicants: {selectedJobApplicants.length}</p>
                         {applicantsLoading ? (
-                          <div className="text-center py-8">Loading...</div>
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                            <p className="text-gray-600">Loading applicants...</p>
+                          </div>
                         ) : selectedJobApplicants.length === 0 ? (
-                          <div className="text-center py-8 text-muted-foreground">No applicants yet.</div>
+                          <div className="text-center py-8 text-gray-500">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <Users className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <p className="text-lg font-medium text-gray-800 mb-2">No applicants yet</p>
+                            <p className="text-sm text-gray-600">When candidates apply to this job, they will appear here.</p>
+                          </div>
                         ) : (
                           <div className="space-y-4 max-h-96 overflow-y-auto">
-                            {selectedJobApplicants.map((app, idx) => (
-                              <div key={app.user._id || idx} className="border rounded p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                                <div>
-                                  <div className="font-semibold">{app.user.firstName} {app.user.lastName}</div>
-                                  <div className="text-xs text-muted-foreground">{app.user.email}</div>
+                            {selectedJobApplicants.map((app, idx) => {
+                              const appliedDate = new Date(app.appliedAt);
+                              const timeDiff = Date.now() - appliedDate.getTime();
+                              const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
+                              const daysAgo = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                              
+                              let timeText = '';
+                              if (hoursAgo < 24) {
+                                timeText = `${hoursAgo} ${hoursAgo === 1 ? 'hour' : 'hours'} ago`;
+                              } else {
+                                timeText = `${daysAgo} ${daysAgo === 1 ? 'day' : 'days'} ago`;
+                              }
+
+                              return (
+                                <div key={app.user._id || idx} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-sm transition-shadow">
+                                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                          <span className="text-blue-600 font-semibold text-sm">
+                                            {app.user.firstName?.[0]}{app.user.lastName?.[0]}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <div className="font-semibold text-gray-800">
+                                            {app.user.firstName} {app.user.lastName}
+                                          </div>
+                                          <div className="text-sm text-gray-600">{app.user.email}</div>
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        Applied {timeText} • {appliedDate.toLocaleDateString()}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
+                                        onClick={() => navigate(`/profile/${app.user._id}`)}
+                                      >
+                                        View Profile
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
-                                {/* Add more profile info as needed */}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => navigate(`/profile/${app.user._id}`)}
-                                >
-                                  View Profile
-                                </Button>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -781,13 +886,13 @@ const RecruiterDashboard = () => {
               </TabsContent>
 
               <TabsContent value="candidates">
-                <Card>
+                <Card className="border-0 shadow-sm">
                   <CardHeader>
-                    <CardTitle>Candidate Database</CardTitle>
-                    <CardDescription>Search and manage candidates</CardDescription>
+                    <CardTitle className="text-gray-800">Candidate Database</CardTitle>
+                    <CardDescription className="text-gray-600">Search and manage candidates</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-center text-muted-foreground py-8">
+                    <p className="text-center text-gray-500 py-8">
                       Candidate management will be implemented here.
                     </p>
                   </CardContent>
@@ -796,23 +901,23 @@ const RecruiterDashboard = () => {
 
               <TabsContent value="applications" className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold">Applications</h2>
-                  <p className="text-muted-foreground">Review and manage job applications</p>
+                  <h2 className="text-2xl font-bold text-gray-800">Applications</h2>
+                  <p className="text-gray-600">Review and manage job applications</p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
                       type="search"
                       placeholder="Search applications..."
-                      className="pl-8 w-full"
+                      className="pl-8 w-full border-gray-200"
                       // Add search functionality here
                     />
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto">
                     <Select>
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[180px] border-gray-200">
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -825,7 +930,7 @@ const RecruiterDashboard = () => {
                       </SelectContent>
                     </Select>
                     <Select>
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[180px] border-gray-200">
                         <SelectValue placeholder="Sort by date" />
                       </SelectTrigger>
                       <SelectContent>
@@ -838,14 +943,14 @@ const RecruiterDashboard = () => {
 
                 {applicationsLoading ? (
                   <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                   </div>
                 ) : applications.length === 0 ? (
-                  <Card>
+                  <Card className="border-0 shadow-sm">
                     <CardContent className="py-12 text-center">
-                      <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium">No applications yet</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-800">No applications yet</h3>
+                      <p className="text-sm text-gray-600 mt-1">
                         Applications for your job postings will appear here.
                       </p>
                     </CardContent>
@@ -853,18 +958,18 @@ const RecruiterDashboard = () => {
                 ) : (
                   <div className="space-y-4">
                     {applications.map((application) => (
-                      <Card key={application._id} className="overflow-hidden hover:shadow-md transition-shadow duration-200">
+                      <Card key={application._id} className="overflow-hidden hover:shadow-md transition-shadow duration-200 border border-gray-200">
                         <CardContent className="p-0">
                           <div className="md:flex">
                             <div className="p-6 flex-1">
                               <div className="flex items-start justify-between">
                                 <div>
                                   <div className="flex items-center gap-3">
-                                    <h3 className="text-lg font-semibold">{application.applicant?.firstName} {application.applicant?.lastName}</h3>
+                                    <h3 className="text-lg font-semibold text-gray-800">{application.applicant?.firstName} {application.applicant?.lastName}</h3>
                                   </div>
-                                  <p className="text-muted-foreground">{application.jobTitle}</p>
-                                  <div className="text-xs text-muted-foreground">{application.applicant?.email}</div>
-                                  <p className="text-sm text-muted-foreground mt-2">
+                                  <p className="text-gray-600">{application.jobTitle}</p>
+                                  <div className="text-xs text-gray-500">{application.applicant?.email}</div>
+                                  <p className="text-sm text-gray-500 mt-2">
                                     Applied on {new Date(application.appliedAt).toLocaleDateString()}
                                   </p>
                                 </div>
@@ -872,6 +977,7 @@ const RecruiterDashboard = () => {
                                   <Button 
                                 variant="outline" 
                                 size="sm" 
+                                className="bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
                                 onClick={() => navigate(`/profile/${application.applicant?._id}`)}
                               >
                                 View Profile

@@ -27,7 +27,7 @@ router.post('/', auth, async (req, res) => {
       type,
       description,
       requirements,
-      postedBy: req.user.id
+      postedBy: req.user._id
     });
 
     const job = await newJob.save();
@@ -51,7 +51,7 @@ router.post('/', auth, async (req, res) => {
 // @access  Private (Recruiter)
 router.get('/', auth, async (req, res) => {
   try {
-    const jobs = await Job.find({ postedBy: req.user.id }).sort({ date: -1 });
+    const jobs = await Job.find({ postedBy: req.user._id }).sort({ date: -1 });
     
     res.status(200).json({
       success: true,
@@ -73,7 +73,11 @@ router.get('/', auth, async (req, res) => {
 // @access  Private (Recruiter)
 router.get('/my-jobs', auth, async (req, res) => {
   try {
-    const jobs = await Job.find({ postedBy: req.user.id }).sort({ date: -1 });
+    console.log('Fetching jobs for user:', req.user._id);
+    console.log('User object:', req.user);
+    
+    const jobs = await Job.find({ postedBy: req.user._id }).sort({ date: -1 });
+    console.log('Found jobs:', jobs);
     
     res.status(200).json({
       success: true,
@@ -118,7 +122,7 @@ router.get('/public', async (req, res) => {
 router.post('/:id/apply', auth, async (req, res) => {
   try {
     const jobId = req.params.id;
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     // Prevent duplicate applications
@@ -151,7 +155,7 @@ router.get('/:id/applicants', auth, async (req, res) => {
     const jobId = req.params.id;
     const job = await Job.findById(jobId).populate('applicants.user');
     if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
-    if (job.postedBy.toString() !== req.user.id) {
+    if (job.postedBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
     res.json({ success: true, applicants: job.applicants });
@@ -166,7 +170,7 @@ router.get('/:id/applicants', auth, async (req, res) => {
 router.get('/applications/recruiter', auth, async (req, res) => {
   try {
     // Find all jobs posted by this recruiter
-    const jobs = await Job.find({ postedBy: req.user.id }).populate('applicants.user');
+    const jobs = await Job.find({ postedBy: req.user._id }).populate('applicants.user');
     // Flatten all applicants with job info
     const applications = [];
     jobs.forEach(job => {

@@ -5,8 +5,13 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
+// Health check endpoint
+router.get('/health', (req, res) => {
+  res.json({ success: true, message: 'Applications API is running' });
+});
+
 // Update application status
-router.put('/:id/status', auth, async (req, res) => {
+router.patch('/:id/status', auth, async (req, res) => {
   try {
     const { status } = req.body;
     const { id } = req.params;
@@ -62,15 +67,33 @@ router.put('/:id/status', auth, async (req, res) => {
 // Get all applications for a recruiter's jobs with status filter
 router.get('/recruiter/applications', auth, async (req, res) => {
   try {
+    console.log('Fetching applications for user:', req.user._id);
+    
     // Find all jobs posted by this recruiter
     const jobs = await Job.find({ postedBy: req.user._id }).select('_id');
+    console.log('Found jobs for recruiter:', jobs);
     const jobIds = jobs.map(job => job._id);
+    console.log('Job IDs:', jobIds);
 
     // Find applications for these jobs
     const applications = await Application.find({ jobId: { $in: jobIds } })
       .populate('jobId', 'title')
       .populate('applicant', 'firstName lastName email')
       .sort({ appliedAt: -1 });
+    
+    console.log('Found applications:', applications);
+
+    // Transform applications to match frontend expectations
+    const transformedApplications = applications.map(app => ({
+      _id: app._id,
+      jobId: app.jobId._id,
+      jobTitle: app.jobId.title,
+      applicant: app.applicant,
+      appliedAt: app.appliedAt,
+      status: app.status
+    }));
+    
+    console.log('Transformed applications:', transformedApplications);
 
     // Count applications by status
     const statusCounts = await Application.aggregate([
@@ -84,11 +107,13 @@ router.get('/recruiter/applications', auth, async (req, res) => {
       counts[item._id] = item.count;
     });
 
+    console.log('Status counts:', counts);
+
     res.json({
       success: true,
-      applications,
+      data: transformedApplications,
       counts: {
-        total: applications.length,
+        total: transformedApplications.length,
         ...counts
       }
     });
