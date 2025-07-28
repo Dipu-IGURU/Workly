@@ -185,7 +185,15 @@ export function JobList({ jobs, onEdit, onDelete, showActions = true }: JobListP
             </div>
           </CardContent>
           <CardFooter className="pt-1 flex justify-between items-center">
-            <Button variant="link" size="sm" className="px-0">
+            <Button 
+              variant="link" 
+              size="sm" 
+              className="px-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/jobs/${job._id}`);
+              }}
+            >
               View details →
             </Button>
             <Button 

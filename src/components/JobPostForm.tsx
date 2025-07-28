@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Input } from "./ui/input";
@@ -88,6 +89,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { refreshJobs } = useJobs();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -188,7 +190,9 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
         workHours: formData.workHours || 'Full-time',
         howToApply: formData.howToApply.trim() || '',
         contactEmail: formData.contactEmail.trim() || '',
-        status: 'active'
+        status: 'active',
+        // Add requiredSkills as an array for the frontend
+        requiredSkills: formData.requiredSkills.split(',').map(skill => skill.trim()).filter(Boolean)
       };
 
       console.log('Submitting job data:', JSON.stringify(jobData, null, 2));
@@ -202,30 +206,27 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
         body: JSON.stringify(jobData)
       });
 
-      let data;
-      try {
-        const responseText = await response.text();
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (error) {
-        console.error('Error parsing response:', error);
-        throw new Error('Server returned invalid response. Please check the console for details.');
-      }
-      
-      if (!response.ok) {
-        console.error('Server error response:', data);
-        const errorMessage = data?.message || data?.error || `Server error: ${response.status}`;
-        throw new Error(Array.isArray(errorMessage) ? errorMessage.join('\n') : errorMessage);
-      }
+      const data = await response.json();
 
-      if (data && !data.success) {
+      if (!response.ok) {
         console.error('API reported failure:', data);
         throw new Error(data.message || 'Failed to post job');
       }
 
       toast({
         title: "Success!",
-        description: data?.message || "Job posted successfully.",
+        description: data?.message || "Job posted successfully. Redirecting to job details...",
       });
+      
+      // Close the dialog and reset form
+      setOpen(false);
+      
+      // Redirect to job details page after a short delay
+      if (data._id) {
+        setTimeout(() => {
+          navigate(`/jobs/${data._id}`);
+        }, 1500);
+      }
       
       // Reset form after successful submission
       const resetData: JobPostData = {
