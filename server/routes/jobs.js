@@ -12,34 +12,50 @@ const User = require('../models/User');
 // @access  Private (Recruiter)
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, company, location, type, description, requirements } = req.body;
+    const {
+      title, type, workType, location, vacancies,
+      company, companyWebsite, companyDescription,
+      description, responsibilities, requiredSkills, preferredQualifications, experience, education,
+      salaryRange, benefits,
+      applicationDeadline, startDate, workHours,
+      howToApply, contactEmail
+    } = req.body;
 
     // Validate required fields
-    if (!title || !company || !location || !type || !description || !requirements) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
+    const requiredFields = [
+      'title', 'type', 'workType', 'location', 'company', 'description',
+      'responsibilities', 'requiredSkills', 'experience', 'salaryRange',
+      'applicationDeadline', 'workHours', 'howToApply', 'contactEmail'
+    ];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Missing required fields: ${missingFields.join(', ')}`
+      });
     }
-    
+
     // Create new job
     const newJob = new Job({
-      title,
-      company,
-      location,
-      type,
-      description,
-      requirements,
+      title, type, workType, location, vacancies,
+      company, companyWebsite, companyDescription,
+      description, responsibilities, requiredSkills, preferredQualifications, experience, education,
+      salaryRange, benefits,
+      applicationDeadline, startDate, workHours,
+      howToApply, contactEmail,
       postedBy: req.user._id
     });
 
     const job = await newJob.save();
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: 'Job posted successfully',
-      data: job 
+      data: job
     });
   } catch (err) {
     console.error('Error posting job:', err);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Server error while posting job',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });

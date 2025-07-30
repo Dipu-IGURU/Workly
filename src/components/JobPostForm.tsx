@@ -166,33 +166,38 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
 
       // Prepare the data for API with required fields that match the server model
       const jobData = {
-        // Required fields by the server
+        // Basic Job Information
         title: formData.title.trim(),
-        company: formData.company.trim(),
-        location: formData.location.trim(),
         type: formData.type,
-        description: formData.description.trim(),
-        // Combine responsibilities and required skills as requirements
-        requirements: `${formData.responsibilities.trim()}\n\nRequired Skills:\n${formData.requiredSkills.trim()}`,
-        
-        // Include other fields that might be used by the frontend
         workType: formData.workType,
-        vacancies: formData.vacancies ? parseInt(formData.vacancies) : 1,
+        location: formData.location.trim(),
+        vacancies: formData.vacancies?.trim() || '',
+        
+        // Company Information
+        company: formData.company.trim(),
         companyWebsite: formData.companyWebsite?.trim() || '',
         companyDescription: formData.companyDescription?.trim() || '',
+        
+        // Job Description
+        description: formData.description.trim(),
+        responsibilities: formData.responsibilities.trim(),
+        requiredSkills: formData.requiredSkills.trim(),
         preferredQualifications: formData.preferredQualifications?.trim() || '',
-        experience: formData.experience.trim() || '',
+        experience: formData.experience.trim(),
         education: formData.education?.trim() || '',
-        salaryRange: formData.salaryRange.trim() || '',
+        
+        // Compensation & Benefits
+        salaryRange: formData.salaryRange.trim(),
         benefits: formData.benefits?.trim() || '',
-        applicationDeadline: formData.applicationDeadline ? new Date(formData.applicationDeadline).toISOString() : '',
-        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : '',
-        workHours: formData.workHours || 'Full-time',
-        howToApply: formData.howToApply.trim() || '',
-        contactEmail: formData.contactEmail.trim() || '',
-        status: 'active',
-        // Add requiredSkills as an array for the frontend
-        requiredSkills: formData.requiredSkills.split(',').map(skill => skill.trim()).filter(Boolean)
+        
+        // Other Details
+        applicationDeadline: formData.applicationDeadline,
+        startDate: formData.startDate?.trim() || '',
+        workHours: formData.workHours,
+        
+        // Application Process
+        howToApply: formData.howToApply.trim(),
+        contactEmail: formData.contactEmail.trim()
       };
 
       console.log('Submitting job data:', JSON.stringify(jobData, null, 2));
@@ -222,9 +227,9 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
       setOpen(false);
       
       // Redirect to job details page after a short delay
-      if (data._id) {
+      if (data.data && data.data._id) {
         setTimeout(() => {
-          navigate(`/jobs/${data._id}`);
+          navigate(`/jobs/${data.data._id}`);
         }, 1500);
       }
       

@@ -10,12 +10,34 @@ import { JobApplicationForm } from "@/components/JobApplicationForm";
 
 type JobDetails = {
   _id: string;
+  // Basic Job Information
   title: string;
-  company: string;
-  location: string;
   type: string;
+  workType: string;
+  location: string;
+  vacancies?: string;
+  // Company Information
+  company: string;
+  companyWebsite?: string;
+  companyDescription?: string;
+  // Job Description
   description: string;
-  requirements: string;
+  responsibilities: string;
+  requiredSkills: string;
+  preferredQualifications?: string;
+  experience: string;
+  education?: string;
+  // Compensation & Benefits
+  salaryRange: string;
+  benefits?: string;
+  // Other Details
+  applicationDeadline: string;
+  startDate?: string;
+  workHours: string;
+  // Application Process
+  howToApply: string;
+  contactEmail: string;
+  // System fields
   postedBy: string;
   date: string;
   applicants: Array<{
@@ -115,35 +137,60 @@ export default function JobDetails() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8">
+              {/* Company Information */}
               <div>
-                <h3 className="text-xl font-semibold mb-2">Job Description</h3>
-                <div className="prose max-w-none">
-                  {job.description}
+                <h3 className="text-xl font-semibold mb-3">Company Information</h3>
+                <div className="prose max-w-none text-gray-700">
+                  <strong>Company Name:</strong> {job.company}<br />
+                  {job.companyWebsite && (<><strong>Website:</strong> <a href={job.companyWebsite} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{job.companyWebsite}</a><br /></>)}
+                  {job.companyDescription && (<><strong>Description:</strong> {job.companyDescription}<br /></>)}
                 </div>
               </div>
 
+              {/* Job Description */}
               <div>
-                <h3 className="text-xl font-semibold mb-2">Requirements</h3>
-                <div className="prose max-w-none">
-                  {job.requirements}
+                <h3 className="text-xl font-semibold mb-3">Job Description</h3>
+                <div className="prose max-w-none text-gray-700">
+                  <strong>Overview:</strong> {job.description}<br />
+                  <strong>Responsibilities:</strong> {job.responsibilities}<br />
+                  <strong>Required Skills:</strong> {job.requiredSkills}<br />
+                  {job.preferredQualifications && (<><strong>Preferred Qualifications:</strong> {job.preferredQualifications}<br /></>)}
+                  <strong>Experience Required:</strong> {job.experience}<br />
+                  {job.education && (<><strong>Education Level:</strong> {job.education}<br /></>)}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  <span>Posted: {new Date(job.date).toLocaleDateString()}</span>
+              {/* Compensation & Benefits */}
+              <div>
+                <h3 className="text-xl font-semibold mb-3">Compensation & Benefits</h3>
+                <div className="prose max-w-none text-gray-700">
+                  <strong>Salary Range:</strong> {job.salaryRange}<br />
+                  {job.benefits && (<><strong>Benefits:</strong> {job.benefits}<br /></>)}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5" />
-                  <span>Job Type: {job.type}</span>
+              </div>
+
+              {/* Application Process */}
+              <div>
+                <h3 className="text-xl font-semibold mb-3">Application Process</h3>
+                <div className="prose max-w-none text-gray-700">
+                  <strong>How to Apply:</strong> {job.howToApply}<br />
+                  <strong>Contact Email:</strong> <a href={`mailto:${job.contactEmail}`} className="text-blue-600 hover:underline">{job.contactEmail}</a><br />
+                  <strong>Application Deadline:</strong> {job.applicationDeadline}<br />
+                  {job.startDate && (<><strong>Job Start Date:</strong> {job.startDate}<br /></>)}
+                  <strong>Work Hours:</strong> {job.workHours}<br />
+                  <strong>Location:</strong> {job.location}<br />
+                  <strong>Job Type:</strong> {job.type}<br />
+                  <strong>Work Type:</strong> {job.workType}<br />
+                  {job.vacancies && (<><strong>Number of Vacancies:</strong> {job.vacancies}<br /></>)}
                 </div>
+              </div>
+
+              {/* Posted Date and Applicants */}
+              <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
+                <span>Posted on {new Date(job.date).toLocaleDateString()}</span>
                 {job.applicants && job.applicants.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    <span>{job.applicants.length} {job.applicants.length === 1 ? 'applicant' : 'applicants'}</span>
-                  </div>
+                  <span>{job.applicants.length} {job.applicants.length === 1 ? 'applicant' : 'applicants'}</span>
                 )}
               </div>
             </CardContent>
