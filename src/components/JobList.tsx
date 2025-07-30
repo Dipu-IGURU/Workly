@@ -184,25 +184,17 @@ export function JobList({ jobs, onEdit, onDelete, showActions = true }: JobListP
               )}
             </div>
           </CardContent>
-          <CardFooter className="pt-1 flex justify-between items-center">
+          <CardFooter className="pt-1 flex justify-end">
             <Button 
-              variant="link" 
+              variant="outline" 
               size="sm" 
-              className="px-0"
+              className="z-10 relative hover:bg-primary hover:text-primary-foreground"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/jobs/${job._id}`);
               }}
             >
-              View details →
-            </Button>
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="ml-2 z-10 relative"
-              onClick={(e) => handleApplyClick(e, job)}
-            >
-              <Send className="mr-2 h-4 w-4" /> Apply Now
+              <Briefcase className="mr-2 h-4 w-4" /> View Details
             </Button>
           </CardFooter>
         </Card>

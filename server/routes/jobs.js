@@ -116,6 +116,44 @@ router.get('/public', async (req, res) => {
   }
 });
 
+// @route   GET api/jobs/:id
+// @desc    Get a single job by ID
+// @access  Public
+router.get('/:id', async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid job ID format' 
+      });
+    }
+    
+    const job = await Job.findById(jobId);
+    
+    if (!job) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Job not found' 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: job
+    });
+  } catch (err) {
+    console.error('Error fetching job:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching job',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
 // @route   POST api/jobs/:id/apply
 // @desc    Apply to a job
 // @access  Private (User)

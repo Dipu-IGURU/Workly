@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, MapPin, Clock, DollarSign, Calendar, Building, Globe, Mail, ArrowLeft } from 'lucide-react';
+import { Briefcase, MapPin, Clock, DollarSign, Calendar, Building, Globe, Mail, ArrowLeft, Users } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
+import { JobApplicationForm } from "@/components/JobApplicationForm";
 
 type JobDetails = {
   _id: string;
@@ -13,17 +14,14 @@ type JobDetails = {
   company: string;
   location: string;
   type: string;
-  workType: string;
   description: string;
-  responsibilities: string;
-  requiredSkills: string[];
-  salaryRange: string;
-  applicationDeadline: string;
-  startDate: string;
-  workHours: string;
-  contactEmail: string;
-  companyWebsite?: string;
-  createdAt: string;
+  requirements: string;
+  postedBy: string;
+  date: string;
+  applicants: Array<{
+    user: string;
+    appliedAt: string;
+  }>;
 };
 
 export default function JobDetails() {
@@ -32,21 +30,23 @@ export default function JobDetails() {
   const { toast } = useToast();
   const [job, setJob] = useState<JobDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isApplicationOpen, setIsApplicationOpen] = useState(false);
 
   useEffect(() => {
     const fetchJobDetails = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5001/api/jobs/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(`http://localhost:5001/api/jobs/${id}`);
 
         if (!response.ok) throw new Error('Failed to fetch job');
         const data = await response.json();
-        setJob(data);
+        
+        if (data.success) {
+          setJob(data.data);
+        } else {
+          throw new Error(data.message || 'Failed to fetch job');
+        }
       } catch (err) {
+        console.error('Error fetching job:', err);
         toast({
           title: 'Error',
           description: 'Failed to load job details',
@@ -107,38 +107,42 @@ export default function JobDetails() {
                     </Badge>
                   </div>
                 </div>
+                <Button 
+                  onClick={() => setIsApplicationOpen(true)}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Apply Now
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <h3 className="text-xl font-semibold mb-2">Job Description</h3>
-                <div dangerouslySetInnerHTML={{ __html: job.description }} />
+                <div className="prose max-w-none">
+                  {job.description}
+                </div>
               </div>
 
               <div>
                 <h3 className="text-xl font-semibold mb-2">Requirements</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  {job.requiredSkills.map((skill, i) => (
-                    <li key={i}>{skill}</li>
-                  ))}
-                </ul>
+                <div className="prose max-w-none">
+                  {job.requirements}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  <span>Salary: {job.salaryRange || 'Negotiable'}</span>
+                  <Calendar className="h-5 w-5" />
+                  <span>Posted: {new Date(job.date).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  <span>Work Hours: {job.workHours}</span>
+                  <Briefcase className="h-5 w-5" />
+                  <span>Job Type: {job.type}</span>
                 </div>
-                {job.contactEmail && (
+                {job.applicants && job.applicants.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
-                    <a href={`mailto:${job.contactEmail}`} className="text-blue-600">
-                      {job.contactEmail}
-                    </a>
+                    <Users className="h-5 w-5" />
+                    <span>{job.applicants.length} {job.applicants.length === 1 ? 'applicant' : 'applicants'}</span>
                   </div>
                 )}
               </div>
@@ -146,6 +150,22 @@ export default function JobDetails() {
           </Card>
         </div>
       </div>
+      
+      {job && (
+        <JobApplicationForm
+          jobId={job._id}
+          jobTitle={job.title}
+          companyName={job.company}
+          open={isApplicationOpen}
+          onOpenChange={setIsApplicationOpen}
+          onSuccess={() => {
+            toast({
+              title: 'Application Submitted',
+              description: 'Your application has been submitted successfully!',
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ type JobsResponse = {
 };
 
 const FeaturedJobs = () => {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const { jobsVersion } = useJobs();
@@ -165,10 +167,9 @@ const FeaturedJobs = () => {
                         {job.type}
                       </Badge>
                       <Button variant="outline" size="sm" onClick={() => {
-                        setSelectedJob(job);
-                        setIsApplicationOpen(true);
+                        navigate(`/jobs/${job._id}`);
                       }}>
-                        Apply Now
+                        View Details
                       </Button>
                     </div>
                   </CardContent>

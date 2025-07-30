@@ -114,6 +114,7 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/jobs/:id" element={<JobDetails />} />
             <Route path="*" element={<NotFound />} />
             
             {/* Protected Dashboard Routes */}
