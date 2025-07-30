@@ -128,4 +128,46 @@ router.get('/recruiter/applications', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/applications/:applicationId
+// @desc    Get a single application by ID (with applicant info)
+// @access  Private (Recruiter or Applicant)
+router.get('/:applicationId', async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const application = await Application.findById(applicationId).populate('applicant', 'firstName lastName email avatar');
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+    res.json({ success: true, application });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
+// @route   GET /api/applications
+// @desc    Get all applications for a user (with optional sort and limit)
+// @access  Private (Recruiter or Applicant)
+router.get('/', async (req, res) => {
+  try {
+    const { userId, sort = 'desc', limit = 0 } = req.query;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'userId is required' });
+    }
+    const query = { applicant: userId };
+    let cursor = Application.find(query);
+    if (sort === 'desc') {
+      cursor = cursor.sort({ appliedAt: -1 });
+    } else {
+      cursor = cursor.sort({ appliedAt: 1 });
+    }
+    if (limit) {
+      cursor = cursor.limit(Number(limit));
+    }
+    const applications = await cursor.exec();
+    res.json({ success: true, applications });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

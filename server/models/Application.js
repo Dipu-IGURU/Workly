@@ -20,7 +20,62 @@ const applicationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // Additional fields can be added here as needed
+  
+  // Application Form Data
+  fullName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  currentLocation: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  experience: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  education: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  currentCompany: {
+    type: String,
+    trim: true
+  },
+  currentPosition: {
+    type: String,
+    trim: true
+  },
+  expectedSalary: {
+    type: String,
+    trim: true
+  },
+  noticePeriod: {
+    type: String,
+    trim: true
+  },
+  portfolio: {
+    type: String,
+    trim: true
+  },
+  linkedinProfile: {
+    type: String,
+    trim: true
+  },
   resume: {
     type: String,
     required: false

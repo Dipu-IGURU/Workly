@@ -41,6 +41,19 @@ interface UserProfile {
   educationList?: Education[];
   interviewStatus?: 'pending' | 'approved' | 'rejected';
   applicationId?: string; // To track which application this profile is associated with
+  
+  // Application form data
+  fullName?: string;
+  currentLocation?: string;
+  education?: string;
+  currentCompany?: string;
+  currentPosition?: string;
+  expectedSalary?: string;
+  noticePeriod?: string;
+  portfolio?: string;
+  linkedinProfile?: string;
+  coverLetter?: string;
+  resume?: string;
 }
 
 interface ApiResponse {
@@ -55,6 +68,7 @@ const ViewProfile = () => {
   const searchParams = new URLSearchParams(location.search);
   const applicationId = searchParams.get('applicationId') || undefined;
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [application, setApplication] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -147,75 +161,93 @@ const ViewProfile = () => {
   };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!userId) {
-        setError('No user ID provided');
-        setLoading(false);
-        return;
-      }
-
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        console.log('Fetching profile for user ID:', userId, 'with applicationId:', applicationId);
-        setError(null);
-        setLoading(true);
-        
-        // Build the URL with applicationId as a query parameter if it exists
-        const url = new URL(`http://localhost:5001/api/auth/profile/${userId}`);
-        if (applicationId) {
-          url.searchParams.append('applicationId', applicationId);
+        let appId = applicationId;
+        // If no applicationId, fetch the latest application for this user
+        if (!appId && userId) {
+          const token = localStorage.getItem('token');
+          const headers: HeadersInit = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+          const response = await fetch(`http://localhost:5001/api/applications?userId=${userId}&sort=desc&limit=1`, { headers });
+          const data = await response.json();
+          if (data.success && data.applications && data.applications.length > 0) {
+            appId = data.applications[0]._id;
+          }
         }
-        
-        const token = localStorage.getItem('token');
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-        };
-        
-        // Add authorization header if token exists
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        const response = await fetch(url.toString(), { headers });
-        
-        console.log('Response status:', response.status);
-        
-        const data: ApiResponse = await response.json();
-        console.log('Profile API response:', data);
-        
-        if (!response.ok) {
-          throw new Error(data.message || `HTTP error! status: ${response.status}`);
-        }
+        if (appId) {
+          // Fetch application data
+          const token = localStorage.getItem('token');
+          const headers: HeadersInit = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+          const response = await fetch(`http://localhost:5001/api/applications/${appId}`, { headers });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || 'Failed to load application');
+          setApplication(data.application);
+        } else {
+          // Fallback to user profile logic
+          if (!userId) {
+            setError('No user ID provided');
+            setLoading(false);
+            return;
+          }
 
-        if (!data.user) {
-          throw new Error('No user data received');
-        }
+          console.log('Fetching profile for user ID:', userId, 'with applicationId:', applicationId);
+          setError(null);
+          setLoading(true);
+          
+          // Build the URL with applicationId as a query parameter if it exists
+          const url = new URL(`http://localhost:5001/api/auth/profile/${userId}`);
+          if (applicationId) {
+            url.searchParams.append('applicationId', applicationId);
+          }
+          
+          const token = localStorage.getItem('token');
+          const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+          };
+          
+          // Add authorization header if token exists
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          const response = await fetch(url.toString(), { headers });
+          
+          console.log('Response status:', response.status);
+          
+          const data: ApiResponse = await response.json();
+          console.log('Profile API response:', data);
+          
+          if (!response.ok) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+          }
 
-        // Ensure applicationId is set in the profile and provide default values for arrays
-        const profileData: UserProfile = {
-          ...data.user,
-          applicationId: applicationId || data.user.applicationId,
-          skills: data.user.skills || [],
-          experienceList: data.user.experienceList || [],
-          educationList: data.user.educationList || []
-        };
-        
-        setProfile(profileData);
-      } catch (error: any) {
-        console.error('Error in fetchProfile:', error);
-        const errorMessage = error.message || 'Failed to load profile. Please try again.';
-        setError(errorMessage);
-        toast({
-          title: 'Error',
-          description: errorMessage,
-          variant: 'destructive',
-        });
+          if (!data.user) {
+            throw new Error('No user data received');
+          }
+
+          // Ensure applicationId is set in the profile and provide default values for arrays
+          const profileData: UserProfile = {
+            ...data.user,
+            applicationId: applicationId || data.user.applicationId,
+            skills: data.user.skills || [],
+            experienceList: data.user.experienceList || [],
+            educationList: data.user.educationList || []
+          };
+          
+          setProfile(profileData);
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to load profile. Please try again.');
       } finally {
         setLoading(false);
       }
     };
-
-    fetchProfile();
-  }, [userId, applicationId, navigate, toast]);
+    fetchData();
+  }, [userId, applicationId]);
 
   if (loading) {
     return (
@@ -245,6 +277,175 @@ const ViewProfile = () => {
             Try Again
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  // If application data is present, show application-based profile
+  if (application) {
+    const app = application;
+    const applicant = app.applicant || {};
+    return (
+      <div className="container mx-auto p-4 md:p-6 max-w-4xl">
+        <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back
+        </Button>
+        <Card className="mb-6">
+          <CardHeader className="pb-0">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-20 w-20">
+                  {applicant.avatar ? (
+                    <AvatarImage src={applicant.avatar} alt={applicant.firstName + ' ' + applicant.lastName} />
+                  ) : (
+                    <AvatarFallback>{(applicant.firstName?.[0] || '') + (applicant.lastName?.[0] || '')}</AvatarFallback>
+                  )}
+                </Avatar>
+                <div>
+                  <h1 className="text-2xl font-bold">{app.fullName || (applicant.firstName + ' ' + applicant.lastName)}</h1>
+                  {app.email && (
+                    <p className="text-lg text-muted-foreground">{app.email}</p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 md:mt-0 space-x-2">
+                <Button variant="outline" asChild>
+                  <a href={`mailto:${app.email}`} className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2" /> Email
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            {/* Personal Information */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <Mail className="w-5 h-5 mr-2 text-primary" /> Personal Information
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <Mail className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <a href={`mailto:${app.email}`} className="hover:underline font-medium">{app.email}</a>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="font-medium">{app.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Current Location</p>
+                      <p className="font-medium">{app.currentLocation}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {app.portfolio && (
+                    <div className="flex items-center">
+                      <Globe className="w-4 h-4 mr-3 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Portfolio</p>
+                        <a href={app.portfolio.startsWith('http') ? app.portfolio : `https://${app.portfolio}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-600 font-medium">{app.portfolio}</a>
+                      </div>
+                    </div>
+                  )}
+                  {app.linkedinProfile && (
+                    <div className="flex items-center">
+                      <Globe className="w-4 h-4 mr-3 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">LinkedIn</p>
+                        <a href={app.linkedinProfile.startsWith('http') ? app.linkedinProfile : `https://${app.linkedinProfile}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-600 font-medium">{app.linkedinProfile}</a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* Professional Information */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <Briefcase className="w-5 h-5 mr-2 text-primary" /> Professional Information
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  {app.currentCompany && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Current Company</p>
+                      <p className="font-medium">{app.currentCompany}</p>
+                    </div>
+                  )}
+                  {app.currentPosition && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Current Position</p>
+                      <p className="font-medium">{app.currentPosition}</p>
+                    </div>
+                  )}
+                  {app.experience && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Years of Experience</p>
+                      <p className="font-medium">{app.experience}</p>
+                    </div>
+                  )}
+                  {app.education && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Highest Education</p>
+                      <p className="font-medium">{app.education}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {app.expectedSalary && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Expected Salary</p>
+                      <p className="font-medium">{app.expectedSalary}</p>
+                    </div>
+                  )}
+                  {app.noticePeriod && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Notice Period</p>
+                      <p className="font-medium">{app.noticePeriod}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* Cover Letter */}
+            {app.coverLetter && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-primary" /> Cover Letter
+                </h2>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-muted-foreground whitespace-pre-line">{app.coverLetter}</p>
+                </div>
+              </div>
+            )}
+            {/* Resume */}
+            {app.resume && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-primary" /> Resume
+                </h2>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-muted-foreground">Resume uploaded: {app.resume}</p>
+                  <Button variant="outline" className="mt-2" asChild>
+                    <a href={`http://localhost:5001/${app.resume}`} target="_blank" rel="noopener noreferrer">
+                      View Resume
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -315,61 +516,189 @@ const ViewProfile = () => {
         </CardHeader>
         
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <Mail className="w-5 h-5 mr-2 text-primary" /> Contact Information
-              </h2>
-              <div className="space-y-2">
-                <p className="flex items-center">
-                  <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <a href={`mailto:${profile.email}`} className="hover:underline">
-                    {profile.email}
-                  </a>
-                </p>
+          {/* Personal Information */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <Mail className="w-5 h-5 mr-2 text-primary" /> Personal Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <Mail className="w-4 h-4 mr-3 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <a href={`mailto:${profile.email}`} className="hover:underline font-medium">
+                      {profile.email}
+                    </a>
+                  </div>
+                </div>
                 {profile.phone && (
-                  <p className="flex items-center">
-                    <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
-                    {profile.phone}
-                  </p>
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="font-medium">{profile.phone}</p>
+                    </div>
+                  </div>
                 )}
-                {(profile.address || profile.city || profile.country) && (
-                  <p className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                    <span>{[profile.address, profile.city, profile.country].filter(Boolean).join(', ')}</span>
-                  </p>
+                {profile.currentLocation && (
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Current Location</p>
+                      <p className="font-medium">{profile.currentLocation}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-3">
+                {profile.portfolio && (
+                  <div className="flex items-center">
+                    <Globe className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Portfolio</p>
+                      <a href={profile.portfolio.startsWith('http') ? profile.portfolio : `https://${profile.portfolio}`} 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="hover:underline text-blue-600 font-medium">
+                        {profile.portfolio}
+                      </a>
+                    </div>
+                  </div>
+                )}
+                {profile.linkedinProfile && (
+                  <div className="flex items-center">
+                    <Globe className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">LinkedIn</p>
+                      <a href={profile.linkedinProfile.startsWith('http') ? profile.linkedinProfile : `https://${profile.linkedinProfile}`} 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="hover:underline text-blue-600 font-medium">
+                        {profile.linkedinProfile}
+                      </a>
+                    </div>
+                  </div>
                 )}
                 {profile.website && (
-                  <p className="flex items-center">
-                    <Globe className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                    <a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       className="hover:underline text-blue-600">
-                      {profile.website}
-                    </a>
-                  </p>
+                  <div className="flex items-center">
+                    <Globe className="w-4 h-4 mr-3 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Website</p>
+                      <a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="hover:underline text-blue-600 font-medium">
+                        {profile.website}
+                      </a>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
-
-            {profile.skills && profile.skills.length > 0 && (
-              <div>
-                <h2 className="text-lg font-semibold mb-4">Skills</h2>
-                <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
+          {/* Professional Information */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <Briefcase className="w-5 h-5 mr-2 text-primary" /> Professional Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                {profile.currentCompany && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Current Company</p>
+                    <p className="font-medium">{profile.currentCompany}</p>
+                  </div>
+                )}
+                {profile.currentPosition && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Current Position</p>
+                    <p className="font-medium">{profile.currentPosition}</p>
+                  </div>
+                )}
+                {profile.experience && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Years of Experience</p>
+                    <p className="font-medium">{profile.experience}</p>
+                  </div>
+                )}
+                {profile.education && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Highest Education</p>
+                    <p className="font-medium">{profile.education}</p>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-3">
+                {profile.expectedSalary && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Expected Salary</p>
+                    <p className="font-medium">{profile.expectedSalary}</p>
+                  </div>
+                )}
+                {profile.noticePeriod && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Notice Period</p>
+                    <p className="font-medium">{profile.noticePeriod}</p>
+                  </div>
+                )}
+                {profile.currentSalary && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Current Salary</p>
+                    <p className="font-medium">{profile.currentSalary}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Skills */}
+          {profile.skills && profile.skills.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4">Skills</h2>
+              <div className="flex flex-wrap gap-2">
+                {profile.skills.map((skill, index) => (
+                  <Badge key={index} variant="secondary">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cover Letter */}
+          {profile.coverLetter && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <FileText className="w-5 h-5 mr-2 text-primary" /> Cover Letter
+              </h2>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-muted-foreground whitespace-pre-line">{profile.coverLetter}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Resume */}
+          {profile.resume && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <FileText className="w-5 h-5 mr-2 text-primary" /> Resume
+              </h2>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-muted-foreground">Resume uploaded: {profile.resume}</p>
+                <Button variant="outline" className="mt-2" asChild>
+                  <a href={`http://localhost:5001/${profile.resume}`} target="_blank" rel="noopener noreferrer">
+                    View Resume
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+
           {profile.description && (
-            <div className="mt-6">
-              <h2 className="text-lg font-semibold mb-2">About</h2>
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-2">About</h2>
               <p className="text-muted-foreground whitespace-pre-line">{profile.description}</p>
             </div>
           )}

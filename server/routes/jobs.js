@@ -2,10 +2,50 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // Models
 const Job = require('../models/Job');
 const User = require('../models/User');
+const Application = require('../models/Application');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../uploads/resumes');
+    // Create uploads directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Create a unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Accept only PDF, DOC, and DOCX files
+  const filetypes = /pdf|doc|docx/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only PDF, DOC, and DOCX files are allowed!'));
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 // @route   POST api/jobs
 // @desc    Create a new job posting
@@ -173,30 +213,116 @@ router.get('/:id', async (req, res) => {
 // @route   POST api/jobs/:id/apply
 // @desc    Apply to a job
 // @access  Private (User)
-router.post('/:id/apply', auth, async (req, res) => {
+router.post('/:id/apply', auth, upload.single('resume'), async (req, res) => {
   try {
     const jobId = req.params.id;
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // Prevent duplicate applications
-    if (user.appliedJobs.some(j => j.job.toString() === jobId)) {
-      return res.status(400).json({ success: false, message: 'Already applied to this job' });
+    // Check if job exists
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
     }
 
-    user.appliedJobs.push({ job: jobId });
+    // Prevent duplicate applications
+    const existingApplication = await Application.findOne({
+      jobId: jobId,
+      applicant: req.user._id
+    });
+
+    if (existingApplication) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'You have already applied to this job' 
+      });
+    }
+
+    // Extract form data
+    const {
+      fullName, email, phone, currentLocation, experience, education,
+      currentCompany, currentPosition, expectedSalary, noticePeriod,
+      coverLetter, portfolio, linkedinProfile
+    } = req.body;
+
+    // Validate required fields
+    const requiredFields = ['fullName', 'email', 'phone', 'currentLocation', 'experience', 'education'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    if (missingFields.length > 0) {
+      // If there's an uploaded file, remove it
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({ 
+        success: false, 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
+      });
+    }
+
+    // Handle file upload
+    let resumePath = '';
+    if (req.file) {
+      resumePath = `uploads/resumes/${path.basename(req.file.path)}`;
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Resume is required' 
+      });
+    }
+
+    // Create application record
+    const application = new Application({
+      jobId,
+      applicant: req.user._id,
+      status: 'pending',
+      fullName,
+      email,
+      phone,
+      currentLocation,
+      experience,
+      education,
+      currentCompany: currentCompany || '',
+      currentPosition: currentPosition || '',
+      expectedSalary: expectedSalary || '',
+      noticePeriod: noticePeriod || '',
+      coverLetter: coverLetter || '',
+      portfolio: portfolio || '',
+      linkedinProfile: linkedinProfile || '',
+      resume: resumePath,
+      appliedAt: new Date()
+    });
+
+    await application.save();
+
+    // Add to user's applied jobs
+    user.appliedJobs.push({
+      job: jobId,
+      application: application._id,
+      status: 'pending',
+      appliedAt: new Date()
+    });
+
     await user.save();
 
-    // Add applicant to job's applicants array
-    const job = await Job.findById(jobId);
+    // Add application to job's applicants
+    job.applicants.push({
+      user: req.user._id,
+      application: application._id,
+      appliedAt: new Date()
+    });
     if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
     if (!job.applicants.some(a => a.user.toString() === user._id.toString())) {
       job.applicants.push({ user: user._id });
       await job.save();
     }
 
-    res.json({ success: true, message: 'Applied successfully' });
+    res.json({ 
+      success: true, 
+      message: 'Applied successfully',
+      applicationId: application._id
+    });
   } catch (err) {
+    console.error('Error applying to job:', err);
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 });
