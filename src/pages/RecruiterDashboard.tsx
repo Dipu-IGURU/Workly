@@ -116,6 +116,8 @@ const RecruiterDashboard = () => {
   const [selectedJobApplicants, setSelectedJobApplicants] = useState<any[]>([]);
   const [selectedJobTitle, setSelectedJobTitle] = useState<string>('');
   const [applicantsLoading, setApplicantsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -391,40 +393,56 @@ const RecruiterDashboard = () => {
     setJobs(jobs.filter(job => job._id !== jobId));
   };
 
-  const updateApplicationStatus = async (applicationId: string, status: Application['status']) => {
+  const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
     try {
-      const token = localStorage.getItem('token');
+      setIsUpdatingStatus(prev => ({ ...prev, [applicationId]: true }));
       
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
       const response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}/status`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        credentials: 'include',
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status: newStatus })
       });
 
       if (!response.ok) {
         throw new Error('Failed to update application status');
       }
 
-      const data = await response.json();
-      if (data.success) {
-        setApplications(applications.map(application => application._id === applicationId ? { ...application, status } : application));
-      }
+      // Update the application in the local state
+      setApplications(prevApplications => 
+        prevApplications.map(app => 
+          app._id === applicationId 
+            ? { ...app, status: newStatus as 'pending' | 'reviewed' | 'interview' | 'rejected' | 'hired' } 
+            : app
+        )
+      );
+
+      // Update application stats
+      setApplicationStats(prev => {
+        const newStats = { ...prev };
+        // Decrement count from old status
+        if (prev[prev.status]) newStats[prev.status]--;
+        // Increment count for new status
+        newStats[newStatus] = (newStats[newStatus] || 0) + 1;
+        return newStats;
+      });
+
+      toast({
+        title: 'Success',
+        description: 'Application status updated successfully',
+        variant: 'default',
+      });
     } catch (error) {
       console.error('Error updating application status:', error);
       toast({
-        title: "Error",
-        description: "Failed to update application status. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update application status',
+        variant: 'destructive',
       });
+    } finally {
+      setIsUpdatingStatus(prev => ({ ...prev, [applicationId]: false }));
     }
   };
 
@@ -974,15 +992,43 @@ const RecruiterDashboard = () => {
                                     Applied on {new Date(application.appliedAt).toLocaleDateString()}
                                   </p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-col items-end gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <Badge 
+                                      variant={
+                                        application.status === 'pending' ? 'secondary' : 
+                                        application.status === 'interview' ? 'default' :
+                                        application.status === 'hired' ? 'success' :
+                                        application.status === 'rejected' ? 'destructive' : 'outline'
+                                      }
+                                      className="capitalize"
+                                    >
+                                      {application.status || 'pending'}
+                                    </Badge>
+                                    {application.status === 'pending' && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-7 text-xs whitespace-nowrap"
+                                        onClick={() => updateApplicationStatus(application._id, 'interview')}
+                                        disabled={isUpdatingStatus[application._id]}
+                                      >
+                                        {isUpdatingStatus[application._id] ? (
+                                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                        ) : (
+                                          'Move to Interview'
+                                        )}
+                                      </Button>
+                                    )}
+                                  </div>
                                   <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
-                                onClick={() => navigate(`/profile/${application.applicant?._id}`)}
-                              >
-                                View Profile
-                              </Button>
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
+                                    onClick={() => navigate(`/profile/${application.applicant?._id}`)}
+                                  >
+                                    View Profile
+                                  </Button>
                                 </div>
                               </div>
                             </div>
