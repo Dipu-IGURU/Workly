@@ -423,7 +423,7 @@ const RecruiterDashboard = () => {
       setApplicationStats(prev => {
         const newStats = { ...prev };
         // Decrement count from old status
-        if (prev[prev.status]) newStats[prev.status]--;
+        if (prev[newStatus]) newStats[newStatus]--;
         // Increment count for new status
         newStats[newStatus] = (newStats[newStatus] || 0) + 1;
         return newStats;
@@ -607,23 +607,43 @@ const RecruiterDashboard = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <nav className="space-y-1">
-                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                  <Button 
+                    variant={activeTab === 'overview' ? 'secondary' : 'ghost'} 
+                    className={`w-full justify-start ${activeTab === 'overview' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                    onClick={() => setActiveTab('overview')}
+                  >
+                    <Briefcase className="w-4 h-4 mr-3" />
+                    Overview
+                  </Button>
+                  <Button 
+                    variant={activeTab === 'jobs' ? 'secondary' : 'ghost'} 
+                    className={`w-full justify-start ${activeTab === 'jobs' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                    onClick={() => setActiveTab('jobs')}
+                  >
                     <Briefcase className="w-4 h-4 mr-3" />
                     Job Posts
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                  <Button 
+                    variant={activeTab === 'candidates' ? 'secondary' : 'ghost'} 
+                    className={`w-full justify-start ${activeTab === 'candidates' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                    onClick={() => setActiveTab('candidates')}
+                  >
                     <Users className="w-4 h-4 mr-3" />
                     Candidates
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                  <Button 
+                    variant={activeTab === 'applications' ? 'secondary' : 'ghost'} 
+                    className={`w-full justify-start ${activeTab === 'applications' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                    onClick={() => setActiveTab('applications')}
+                  >
                     <FileText className="w-4 h-4 mr-3" />
                     Applications
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
-                    <Calendar className="w-4 h-4 mr-3" />
-                    Interviews
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-50">
+                  <Button 
+                    variant={activeTab === 'settings' ? 'secondary' : 'ghost'} 
+                    className={`w-full justify-start ${activeTab === 'settings' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                    onClick={() => setActiveTab('settings')}
+                  >
                     <Settings className="w-4 h-4 mr-3" />
                     Settings
                   </Button>
@@ -634,15 +654,45 @@ const RecruiterDashboard = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200">
-                <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                  <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">1</div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200">
+                <TabsTrigger 
+                  value="overview" 
+                  className={`flex items-center gap-2 ${activeTab === 'overview' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
+                >
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${activeTab === 'overview' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-600'}`}>
+                    1
+                  </div>
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="jobs" className="text-gray-600">Job Posts</TabsTrigger>
-                <TabsTrigger value="candidates" className="text-gray-600">Candidates</TabsTrigger>
-                <TabsTrigger value="applications" className="text-gray-600">Applications</TabsTrigger>
+                <TabsTrigger 
+                  value="jobs" 
+                  className={`flex items-center gap-2 ${activeTab === 'jobs' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
+                >
+                  <Briefcase className="w-4 h-4" />
+                  Job Posts
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="candidates" 
+                  className={`flex items-center gap-2 ${activeTab === 'candidates' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
+                >
+                  <Users className="w-4 h-4" />
+                  Candidates
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="applications" 
+                  className={`flex items-center gap-2 ${activeTab === 'applications' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Applications
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="settings" 
+                  className={`flex items-center gap-2 ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
+                >
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
@@ -1038,6 +1088,28 @@ const RecruiterDashboard = () => {
                     ))}
                   </div>
                 )}
+              </TabsContent>
+              <TabsContent value="candidates">
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle>Candidates</CardTitle>
+                    <CardDescription>Manage your candidate database</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Candidates content will be displayed here.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="settings">
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle>Settings</CardTitle>
+                    <CardDescription>Manage your account settings</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Settings content will be displayed here.</p>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>
