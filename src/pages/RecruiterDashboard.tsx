@@ -640,6 +640,14 @@ const RecruiterDashboard = () => {
                     Applications
                   </Button>
                   <Button 
+                    variant={activeTab === 'interviews' ? 'secondary' : 'ghost'} 
+                    className={`w-full justify-start ${activeTab === 'interviews' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                    onClick={() => setActiveTab('interviews')}
+                  >
+                    <Calendar className="w-4 h-4 mr-3" />
+                    Interviews
+                  </Button>
+                  <Button 
                     variant={activeTab === 'settings' ? 'secondary' : 'ghost'} 
                     className={`w-full justify-start ${activeTab === 'settings' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
                     onClick={() => setActiveTab('settings')}
@@ -685,6 +693,13 @@ const RecruiterDashboard = () => {
                 >
                   <FileText className="w-4 h-4" />
                   Applications
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="interviews" 
+                  className={`flex items-center gap-2 ${activeTab === 'interviews' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
+                >
+                  <Calendar className="w-4 h-4" />
+                  Interviews
                 </TabsTrigger>
                 <TabsTrigger 
                   value="settings" 
@@ -1100,6 +1115,72 @@ const RecruiterDashboard = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+              <TabsContent value="interviews" className="space-y-4">
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle>Scheduled Interviews</CardTitle>
+                        <CardDescription>View and manage your upcoming interviews</CardDescription>
+                      </div>
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                        <Plus className="w-4 h-4 mr-2" /> Schedule Interview
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {interviewsThisWeek > 0 ? (
+                      <div className="space-y-4">
+                        <div className="border rounded-lg overflow-hidden">
+                          <div className="grid grid-cols-12 bg-gray-50 p-4 border-b font-medium">
+                            <div className="col-span-3">Candidate</div>
+                            <div className="col-span-3">Job Position</div>
+                            <div className="col-span-2">Date & Time</div>
+                            <div className="col-span-2">Type</div>
+                            <div className="col-span-2">Status</div>
+                          </div>
+                          {Array.from({ length: Math.min(interviewsThisWeek, 5) }).map((_, index) => (
+                            <div key={index} className="grid grid-cols-12 p-4 items-center border-b hover:bg-gray-50">
+                              <div className="col-span-3 font-medium">Candidate {index + 1}</div>
+                              <div className="col-span-3 text-sm text-gray-600">Senior Developer</div>
+                              <div className="col-span-2 text-sm">
+                                <div>Jul {30 + index}, 2023</div>
+                                <div className="text-xs text-gray-500">10:00 AM - 11:00 AM</div>
+                              </div>
+                              <div className="col-span-2">
+                                <Badge variant="outline" className="border-blue-200 text-blue-700">
+                                  Video Call
+                                </Badge>
+                              </div>
+                              <div className="col-span-2">
+                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                  Confirmed
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-between items-center text-sm text-gray-500">
+                          <span>Showing {Math.min(interviewsThisWeek, 5)} of {interviewsThisWeek} interviews</span>
+                          {interviewsThisWeek > 5 && (
+                            <Button variant="ghost" size="sm">View All</Button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <Calendar className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900">No interviews scheduled</h3>
+                        <p className="mt-1 text-sm text-gray-500">Get started by scheduling a new interview.</p>
+                        <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                          <Plus className="w-4 h-4 mr-2" /> Schedule Interview
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
               <TabsContent value="settings">
                 <Card className="border-0 shadow-sm">
                   <CardHeader>
