@@ -34,7 +34,7 @@ const Header = () => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
-      
+
       if (token && userData) {
         try {
           setUser(JSON.parse(userData));
@@ -78,32 +78,10 @@ const Header = () => {
 
           <nav className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center space-x-1 text-foreground hover:text-primary cursor-pointer">
-                  <Link to="/" className="flex items-center space-x-1">
-                    <span>Home</span>
-                    <ChevronDown className="w-4 h-4" />
-                  </Link>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>Home Default</DropdownMenuItem>
-                  <DropdownMenuItem>Home Alternative</DropdownMenuItem>
-                  <DropdownMenuItem>Home Creative</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Link to="/" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                Home
+              </Link>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center space-x-1 text-foreground hover:text-primary cursor-pointer">
-                  <span>Find Jobs</span>
-                  <ChevronDown className="w-4 h-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>Job List</DropdownMenuItem>
-                  <DropdownMenuItem>Job Grid</DropdownMenuItem>
-                  <DropdownMenuItem>Job Details</DropdownMenuItem>
-                  <DropdownMenuItem>Advanced Search</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
 
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center space-x-1 text-foreground hover:text-primary cursor-pointer">
@@ -149,7 +127,9 @@ const Header = () => {
                   <ChevronDown className="w-4 h-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem>About Us</DropdownMenuItem>
+                  <Link to="/about">
+                    About us
+                  </Link>
                   <DropdownMenuItem>Contact</DropdownMenuItem>
                   <DropdownMenuItem>FAQ</DropdownMenuItem>
                   <DropdownMenuItem>Terms & Conditions</DropdownMenuItem>
@@ -164,7 +144,7 @@ const Header = () => {
               <Button variant="outline" className="hidden lg:inline-flex text-sm">
                 Upload your CV
               </Button>
-              
+
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -201,7 +181,7 @@ const Header = () => {
                   </Button>
                 </Link>
               )}
-              
+
               {user?.role === 'recruiter' ? (
                 <Link to="/recruiter-dashboard">
                   <Button size="sm" className="text-sm">

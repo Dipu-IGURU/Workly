@@ -20,6 +20,7 @@ import Packages from "./pages/Packages";
 import ChangePassword from "./pages/ChangePassword";
 import JobDetails from "./pages/JobDetails";
 import NotFound from "./pages/NotFound";
+import AboutUs from "./pages/AboutUs";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -115,6 +116,7 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/jobs/:id" element={<JobDetails />} />
+            <Route path="/about" element={<AboutUs />} />
             <Route path="*" element={<NotFound />} />
             
             {/* Protected Dashboard Routes */}
