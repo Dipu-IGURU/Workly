@@ -150,6 +150,23 @@ router.get('/my-jobs', auth, async (req, res) => {
   }
 });
 
+// @route   GET api/jobs/categories
+// @desc    Get job categories with open positions count
+// @access  Public
+router.get('/categories', async (req, res) => {
+  try {
+    const results = await Job.aggregate([
+      { $group: { _id: '$category', positions: { $sum: 1 } } },
+      { $sort: { positions: -1 } }
+    ]);
+    const categories = results.map(r => ({ title: r._id, positions: r.positions }));
+    res.status(200).json({ success: true, data: categories });
+  } catch (err) {
+    console.error('Error fetching categories:', err);
+    res.status(500).json({ success: false, message: 'Server error while fetching categories', error: err.message });
+  }
+});
+
 // @route   GET api/jobs/public
 // @desc    Get all public jobs for display
 // @access  Public

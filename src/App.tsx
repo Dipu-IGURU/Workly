@@ -18,7 +18,8 @@ import ShortlistedJobs from "./pages/ShortlistedJobs";
 import CVManager from "./pages/CVManager";
 import Packages from "./pages/Packages";
 import ChangePassword from "./pages/ChangePassword";
-import JobDetails from "./pages/JobDetails";
+import JobDetails from "@/pages/JobDetails";
+import Jobs from "@/pages/Jobs";
 import NotFound from "./pages/NotFound";
 import AboutUs from "./pages/AboutUs";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -115,6 +116,7 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:id" element={<JobDetails />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="*" element={<NotFound />} />

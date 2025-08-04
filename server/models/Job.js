@@ -8,6 +8,9 @@ const JobSchema = new mongoose.Schema({
   location: { type: String, required: true, trim: true },
   vacancies: { type: String, trim: true },
 
+  // Category Information
+  category: { type: String, required: true, trim: true },
+
   // Company Information
   company: { type: String, required: true, trim: true },
   companyWebsite: { type: String, trim: true },

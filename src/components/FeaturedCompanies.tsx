@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { API_BASE_URL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,6 +48,9 @@ interface Company {
 }
 
 const FeaturedCompanies = () => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const jobTitleFilter = params.get("job_title")?.toLowerCase() || "";
   const [companies, setCompanies] = useState<Company[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,31 +63,55 @@ const FeaturedCompanies = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(API_URL, API_OPTIONS);
-        if (!response.ok) throw new Error('Failed to fetch companies');
-        const data = await response.json();
-        if (Array.isArray(data.data)) {
-          setJobs(data.data);
-          // Group jobs by company name
-          const companyMap: Record<string, number> = {};
-          data.data.forEach((job: Job) => {
-            const companyName = job.employer_name || 'Unknown';
-            companyMap[companyName] = (companyMap[companyName] || 0) + 1;
-          });
-          const companiesArr: Company[] = Object.entries(companyMap).map(([name, jobCount]) => ({ name, jobCount }));
-          setCompanies(companiesArr);
-        } else {
-          setJobs([]);
-          setCompanies([]);
-        }
+        // Fetch external API and MongoDB concurrently
+        const [extRes, mongoRes] = await Promise.all([
+          fetch(API_URL, API_OPTIONS),
+          fetch(`${API_BASE_URL}/jobs/public`)
+        ]);
+
+        if (!extRes.ok) throw new Error('Failed to fetch external jobs');
+        if (!mongoRes.ok) throw new Error('Failed to fetch internal jobs');
+
+        const extData = await extRes.json();
+        const mongoData = await mongoRes.json();
+
+        const extJobs: Job[] = Array.isArray(extData.data) ? extData.data : [];
+        const mongoJobs: Job[] = (mongoData.success && Array.isArray(mongoData.data)) ? mongoData.data.map((j:any)=>({
+          job_id: j._id,
+          employer_name: j.company || 'Unknown',
+          job_title: j.title,
+          job_city: j.location,
+          job_country: '',
+          job_description: j.description,
+        })) : [];
+
+        // Merge both sources
+        let combinedJobs: Job[] = [...extJobs, ...mongoJobs];
+
+        // Apply optional title filter
+        combinedJobs = jobTitleFilter
+          ? combinedJobs.filter((j) => j.job_title.toLowerCase().includes(jobTitleFilter))
+          : combinedJobs;
+
+        setJobs(combinedJobs);
+
+        // Group by company
+        const companyMap: Record<string, number> = {};
+        combinedJobs.forEach((job) => {
+          const companyName = job.employer_name || 'Unknown';
+          companyMap[companyName] = (companyMap[companyName] || 0) + 1;
+        });
+        const companiesArr: Company[] = Object.entries(companyMap).map(([name, jobCount]) => ({ name, jobCount }));
+        setCompanies(companiesArr);
       } catch (err: any) {
         setError(err.message || 'Unknown error');
       } finally {
         setLoading(false);
       }
     };
+
     fetchCompanies();
-  }, []);
+  }, [jobTitleFilter]);
 
   if (loading) return <div className="text-center py-12">Loading featured companies...</div>;
   if (error) return <div className="text-center py-12 text-red-500">{error}</div>;
@@ -164,7 +193,7 @@ const FeaturedCompanies = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Featured Companies</h2>
-          <p className="text-lg text-muted-foreground">Browse top companies hiring developers in Chicago</p>
+          <p className="text-lg text-muted-foreground">Browse top companies hiring {jobTitleFilter || 'developers'} in Chicago</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {companies.map((company) => (
