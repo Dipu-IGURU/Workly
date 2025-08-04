@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { format } from 'date-fns';
 import { JobApplicationForm } from "@/components/JobApplicationForm";
 
 type JobDetails = {
+  applyUrl: any;
   _id: string;
   // Basic Job Information
   title: string;
@@ -49,12 +51,16 @@ type JobDetails = {
 export default function JobDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const [job, setJob] = useState<JobDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [job, setJob] = useState<JobDetails | null>(location.state?.job ?? null);
+  const [loading, setLoading] = useState(location.state?.job ? false : true);
   const [isApplicationOpen, setIsApplicationOpen] = useState(false);
 
   useEffect(() => {
+    // If job already available from navigation state, no need to fetch
+    if (job) return;
+
     const fetchJobDetails = async () => {
       try {
         const response = await fetch(`http://localhost:5001/api/jobs/${id}`);
@@ -80,7 +86,7 @@ export default function JobDetails() {
     };
 
     fetchJobDetails();
-  }, [id, toast]);
+  }, [id, toast, job]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -129,12 +135,23 @@ export default function JobDetails() {
                     </Badge>
                   </div>
                 </div>
-                <Button 
-                  onClick={() => setIsApplicationOpen(true)}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  Apply Now
-                </Button>
+                {job.applyUrl ? (
+                  <a 
+                    href={job.applyUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Apply Now
+                  </a>
+                ) : (
+                  <Button 
+                    onClick={() => setIsApplicationOpen(true)}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    Apply Now
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-8">
@@ -152,12 +169,41 @@ export default function JobDetails() {
               <div>
                 <h3 className="text-xl font-semibold mb-3">Job Description</h3>
                 <div className="prose max-w-none text-gray-700">
-                  <strong>Overview:</strong> {job.description}<br />
-                  <strong>Responsibilities:</strong> {job.responsibilities}<br />
-                  <strong>Required Skills:</strong> {job.requiredSkills}<br />
-                  {job.preferredQualifications && (<><strong>Preferred Qualifications:</strong> {job.preferredQualifications}<br /></>)}
-                  <strong>Experience Required:</strong> {job.experience}<br />
-                  {job.education && (<><strong>Education Level:</strong> {job.education}<br /></>)}
+                  <div>
+                    <strong>Overview:</strong> 
+                    {job.description && job.description.length > 400 ? (
+                      <div>
+                        <p className="inline">
+                          {job.description.substring(0, 400)}...
+                        </p>
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const fullText = e.currentTarget.previousSibling as HTMLElement;
+                            if (fullText.textContent?.includes('...')) {
+                              fullText.textContent = job.description;
+                              e.currentTarget.textContent = ' Show Less';
+                            } else {
+                              fullText.textContent = job.description.substring(0, 100) + '...';
+                              e.currentTarget.textContent = ' Read More';
+                            }
+                          }}
+                          className="ml-2 text-blue-600 hover:underline focus:outline-none"
+                        >
+                          Read More
+                        </button>
+                      </div>
+                    ) : (
+                      <p>{job.description || 'No description provided.'}</p>
+                    )}
+                  </div>
+                  <div className="mt-4">
+                    <strong>Responsibilities:</strong> {job.responsibilities || 'Not specified'}<br />
+                    <strong>Required Skills:</strong> {job.requiredSkills || 'Not specified'}<br />
+                    {job.preferredQualifications && (<><strong>Preferred Qualifications:</strong> {job.preferredQualifications}<br /></>)}
+                    <strong>Experience Required:</strong> {job.experience || 'Not specified'}<br />
+                    {job.education && (<><strong>Education Level:</strong> {job.education}<br /></>)}
+                  </div>
                 </div>
               </div>
 

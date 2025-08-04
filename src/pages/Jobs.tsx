@@ -29,20 +29,112 @@ export default function Jobs() {
 
   useEffect(() => {
     const fetchJobs = async () => {
+      setLoading(true);
+      setError(null);
       try {
         setLoading(true);
         const url = category
           ? `${API_BASE_URL}/jobs/public?category=${encodeURIComponent(category)}`
           : `${API_BASE_URL}/jobs/public`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const [mongoRes, apiRes] = await Promise.all([
+          fetch(url),
+          fetch(`https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(category || 'developer')}%20jobs%20in%20canada&page=1&num_pages=1&country=ca&date_posted=all`, {
+            method: 'GET',
+            headers: {
+              'x-rapidapi-key': '6e69e20a50mshf07727d408f0cc9p11790bjsn94f0092644fa',
+              'x-rapidapi-host': 'jsearch.p.rapidapi.com'
+            }
+          })
+        ]);
+        const data = await mongoRes.json();
+        const apiData = await apiRes.json();
         if (data.success) {
           // Optional filtering by job_title query param
           const jobTitleQuery = params.get("job_title")?.toLowerCase() || params.get("title")?.toLowerCase();
           const filteredJobs = jobTitleQuery
             ? data.data.filter((j: Job) => j.title.toLowerCase().includes(jobTitleQuery))
             : data.data;
-          setJobs(filteredJobs);
+          // Map API jobs to common interface with all required fields
+          const apiJobs: Job[] = Array.isArray(apiData.data) ? apiData.data.map((j:any) => ({
+            _id: j.job_id,
+            title: j.job_title,
+            company: j.employer_name,
+            location: j.job_city || j.job_country || 'Remote',
+            type: j.job_employment_type || 'Full-time',
+            workType: j.job_is_remote ? 'Remote' : 'On-site',
+            // Salary information - handle both string and number formats
+            salaryRange: (() => {
+              // Check if we have any salary data
+              const hasMinSalary = j.job_min_salary !== undefined && j.job_min_salary !== null;
+              const hasMaxSalary = j.job_max_salary !== undefined && j.job_max_salary !== null;
+              const hasSalaryRange = hasMinSalary || hasMaxSalary;
+              
+              if (!hasSalaryRange) return 'Salary not specified';
+              
+              // Format the salary values
+              const formatSalary = (value: any) => {
+                if (value === undefined || value === null) return '';
+                // If it's a number, format with commas
+                if (typeof value === 'number') {
+                  return `$${value.toLocaleString()}`;
+                }
+                // If it's a string, check if it's a number
+                if (!isNaN(Number(value))) {
+                  return `$${Number(value).toLocaleString()}`;
+                }
+                // Otherwise, return as is with $ prefix if it doesn't have one
+                return value.toString().startsWith('$') ? value : `$${value}`;
+              };
+              
+              const min = formatSalary(j.job_min_salary);
+              const max = formatSalary(j.job_max_salary);
+              const currency = j.job_salary_currency || '';
+              const period = j.job_salary_period ? `per ${j.job_salary_period.toLowerCase()}` : '';
+              
+              // Build the salary string
+              let salaryStr = '';
+              if (min && max) {
+                salaryStr = `${min} - ${max}`;
+              } else if (min) {
+                salaryStr = `From ${min}`;
+              } else if (max) {
+                salaryStr = `Up to ${max}`;
+              }
+              
+              // Add currency and period if available
+              return [salaryStr, currency, period].filter(Boolean).join(' ');
+            })(),
+            // Job description and details
+            description: j.job_description || 'No description provided.',
+            howToApply: j.job_apply_link ? 'Click the Apply Now button to apply' : 'Apply through the company website',
+            contactEmail: j.employer_website ? `careers@${j.employer_website.replace(/^https?:\/\//, '')}` : 'N/A',
+            // Application details
+            applicationDeadline: j.job_offer_expiration_datetime_utc 
+              ? new Date(j.job_offer_expiration_datetime_utc).toLocaleDateString() 
+              : 'Not specified',
+            workHours: j.job_schedule_type || 'Standard business hours',
+            // Job requirements
+            responsibilities: Array.isArray(j.job_highlights?.responsibilities) 
+              ? j.job_highlights.responsibilities.join('\n• ') 
+              : (j.job_highlights?.responsibilities || 'Not specified'),
+            requiredSkills: Array.isArray(j.job_highlights?.skills)
+              ? j.job_highlights.skills.join(', ')
+              : (j.job_highlights?.skills || 'Not specified'),
+            experience: j.job_highlights?.experience || j.job_required_experience?.required_experience_in_months 
+              ? `${Math.floor(j.job_required_experience.required_experience_in_months / 12)}+ years` 
+              : 'Not specified',
+            // Metadata
+            date: j.job_posted_at_timestamp 
+              ? new Date(j.job_posted_at_timestamp * 1000).toISOString() 
+              : new Date().toISOString(),
+            postedBy: j.employer_name || 'Company',
+            applicants: [],
+            // Application link (direct or from apply_options)
+            applyUrl: j.job_apply_link || (j.apply_options?.[0]?.apply_link || '')
+          })) : [];
+
+          const merged = [...filteredJobs, ...apiJobs];
+          setJobs(merged);
         } else {
           setError("Failed to load jobs");
         }
@@ -69,7 +161,7 @@ export default function Jobs() {
           {jobs.map((job) => (
             <Card
               key={job._id}
-              onClick={() => navigate(`/jobs/${job._id}`)}
+              onClick={() => navigate(`/jobs/${job._id}`, { state: { job } })}
               className="cursor-pointer hover:shadow-lg transition-shadow border border-border bg-job-card"
             >
               <CardContent className="p-6 space-y-4">
