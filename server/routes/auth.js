@@ -245,4 +245,65 @@ router.get('/profile/:id?', async (req, res) => {
   }
 });
 
+// Google Login/Register endpoint
+router.post('/google-login', async (req, res) => {
+  try {
+    const { email, name, photoURL, role } = req.body;
+
+    if (!email || !name || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, name, and role are required for Google Sign-In.'
+      });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // If user doesn't exist, create a new one
+      const nameParts = name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || firstName; // Handle names without a last name
+
+      const userData = {
+        email,
+        firstName,
+        lastName,
+        photoURL,
+        role,
+        isVerified: true // Google users are considered verified
+      };
+
+      user = new User(userData);
+      // We need to bypass password validation since it's not required for Google users
+      await user.save({ validateBeforeSave: false });
+    }
+
+    // Generate token using the existing function
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: 'Google login successful',
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        company: user.company,
+        photoURL: user.photoURL
+      }
+    });
+
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during Google login'
+    });
+  }
+});
+
 module.exports = router;

@@ -25,6 +25,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  photoURL: {
+    type: String
+  },
   email: {
     type: String,
     required: true,
@@ -34,8 +37,8 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
     minlength: 8
+    // Not required, as Google users won't have a password
   },
   role: {
     type: String,

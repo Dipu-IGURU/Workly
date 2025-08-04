@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "@/firebase";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff, User, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/config";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -201,19 +204,76 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-primary hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
-
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing In..." : `Sign In as ${userRole === "user" ? "Job Seeker" : "Recruiter"}`}
             </Button>
           </form>
+
+          {/* Google Sign-In Button */}
+          <Button
+            type="button"
+            className="w-full mt-2 flex items-center justify-center gap-2 bg-white text-black border border-gray-300 hover:bg-gray-100"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // Send user info to backend for registration/login
+                const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    email: user.email,
+                    name: user.displayName,
+                    photoURL: user.photoURL,
+                    role: userRole, // Send the selected role to the backend
+                  }),
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success && data.token && data.user) {
+                  // Store token and user data
+                  localStorage.setItem('token', data.token);
+                  localStorage.setItem('user', JSON.stringify(data.user));
+
+                  toast({
+                    title: 'Google Sign-In Successful',
+                    description: `Welcome, ${data.user.name || data.user.email}!`,
+                  });
+
+                  // Redirect based on user role
+                  setTimeout(() => {
+                    if (data.user.role === 'recruiter') {
+                      window.location.href = '/recruiter-dashboard';
+                    } else {
+                      window.location.href = '/user-dashboard';
+                    }
+                  }, 500);
+                } else {
+                  toast({
+                    title: 'Google Sign-In Failed',
+                    description: data.message || 'Unable to log in with Google.',
+                    variant: 'destructive',
+                  });
+                }
+              } catch (error: any) {
+                toast({
+                  title: 'Google Sign-In Failed',
+                  description: error.message || 'An error occurred during Google authentication.',
+                  variant: 'destructive',
+                });
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="h-5 w-5" />
+            {loading ? "Signing in with Google..." : "Sign in with Google"}
+          </Button>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
