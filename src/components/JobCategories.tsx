@@ -92,7 +92,7 @@ const JobCategories: React.FC = () => {
             Popular Job Categories
           </h2>
           <p className="text-lg text-muted-foreground">
-            2025 jobs live - 293 added today.
+            {categories.length} jobs live - {categories.length} added today.
           </p>
         </div>
 
