@@ -65,25 +65,40 @@ const FeaturedCompanies = () => {
       try {
         // Fetch external API and MongoDB concurrently
         const [extRes, mongoRes] = await Promise.all([
-          fetch(API_URL, API_OPTIONS),
-          fetch(`${API_BASE_URL}/jobs/public`)
+          fetch(API_URL, API_OPTIONS).catch(err => {
+            console.error('Error fetching JSearch API:', err);
+            return { ok: false, json: () => ({ data: [] }) };
+          }),
+          fetch(`${API_BASE_URL}/jobs/public`).catch(err => {
+            console.error('Error fetching MongoDB jobs:', err);
+            return { ok: false, json: () => ({ jobs: [] }) };
+          })
         ]);
 
-        if (!extRes.ok) throw new Error('Failed to fetch external jobs');
-        if (!mongoRes.ok) throw new Error('Failed to fetch internal jobs');
+        // Process JSearch API jobs
+        let extJobs: Job[] = [];
+        if (extRes.ok) {
+          const extData = await extRes.json();
+          extJobs = Array.isArray(extData.data) ? extData.data : [];
+        } else {
+          console.warn('Failed to fetch JSearch jobs, continuing with internal jobs only');
+        }
 
-        const extData = await extRes.json();
-        const mongoData = await mongoRes.json();
-
-        const extJobs: Job[] = Array.isArray(extData.data) ? extData.data : [];
-        const mongoJobs: Job[] = (mongoData.success && Array.isArray(mongoData.data)) ? mongoData.data.map((j:any)=>({
-          job_id: j._id,
-          employer_name: j.company || 'Unknown',
-          job_title: j.title,
-          job_city: j.location,
-          job_country: '',
-          job_description: j.description,
-        })) : [];
+        // Process MongoDB jobs
+        let mongoJobs: Job[] = [];
+        if (mongoRes.ok) {
+          const mongoData = await mongoRes.json();
+          mongoJobs = (mongoData.success && Array.isArray(mongoData.data)) ? mongoData.data.map((j:any)=>({
+            job_id: j._id,
+            employer_name: j.company || 'Unknown',
+            job_title: j.title,
+            job_city: j.location,
+            job_country: '',
+            job_description: j.description,
+          })) : [];
+        } else {
+          console.warn('Failed to fetch MongoDB jobs, continuing with external jobs only');
+        }
 
         // Merge both sources
         let combinedJobs: Job[] = [...extJobs, ...mongoJobs];

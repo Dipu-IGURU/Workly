@@ -5,6 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, DollarSign, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface Job {
   _id: string;
@@ -55,10 +65,19 @@ const getCategorySearchTerm = (category: string): string => {
   return categoryMap[category] || category.toLowerCase();
 };
 
+interface Company {
+  name: string;
+  jobCount: number;
+}
+
 export default function Jobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'jobs' | 'companies'>('jobs');
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
@@ -221,6 +240,15 @@ export default function Jobs() {
         }
 
         setJobs(filteredJobs);
+
+        // Generate companies data
+        const companyMap: Record<string, number> = {};
+        filteredJobs.forEach((job) => {
+          const companyName = job.company || 'Unknown';
+          companyMap[companyName] = (companyMap[companyName] || 0) + 1;
+        });
+        const companiesArr: Company[] = Object.entries(companyMap).map(([name, jobCount]) => ({ name, jobCount }));
+        setCompanies(companiesArr);
       } catch (err) {
         console.error('Error fetching jobs:', err);
         setError("Failed to load jobs. Please try again later.");
@@ -346,6 +374,37 @@ export default function Jobs() {
     );
   };
 
+  // Render company cards
+  const renderCompanyCards = () => {
+    if (loading) {
+      return <p className="text-center py-8">Loading companies...</p>;
+    }
+
+    if (error) {
+      return <p className="text-center text-red-500 py-8">{error}</p>;
+    }
+
+    if (companies.length === 0) {
+      return <p className="text-center py-8">No companies found.</p>;
+    }
+
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {companies.map((company) => (
+          <Card key={company.name} className="hover:shadow-lg transition-shadow border border-border bg-card cursor-pointer h-40 flex flex-col" onClick={() => setSelectedCompany(company.name)}>
+            <CardContent className="p-6 flex flex-col items-center justify-center flex-grow">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                <span className="text-primary text-2xl font-bold">{company.name.charAt(0).toUpperCase()}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-center text-foreground">{company.name}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{company.jobCount} {company.jobCount === 1 ? 'job' : 'jobs'} available</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   const getPageTitle = () => {
     if (jobTitle && searchLocation) {
       return `${jobTitle} Jobs in ${searchLocation}`;
@@ -358,6 +417,75 @@ export default function Jobs() {
     }
     return "All Jobs in Chicago";
   };
+
+  // If a company is selected, show its jobs
+  if (selectedCompany) {
+    const companyJobs = jobs.filter(job => job.company === selectedCompany);
+    return (
+      <section className="min-h-screen py-12 bg-background">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center mb-8">
+            <Button variant="ghost" onClick={() => setSelectedCompany(null)} className="mr-4">Back to {viewMode === 'companies' ? 'Companies' : 'Jobs'}</Button>
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground">{selectedCompany} Jobs</h2>
+          </div>
+          {companyJobs.length > 0 ? (
+            <div className="space-y-6">
+              {companyJobs.map((job) => (
+                <Card key={job._id} className="border border-border bg-card">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-center mb-2">
+                      <div>
+                        <h3 className="font-semibold text-lg text-foreground mb-1">{job.title}</h3>
+                        <p className="text-muted-foreground mb-2">{job.location}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{job.description?.slice(0, 120)}...</p>
+                      </div>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => setSelectedJob(job)}>View Details</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>{job.title}</DialogTitle>
+                            <DialogDescription>
+                              <div className="mt-2 text-left max-h-[60vh] overflow-y-auto pr-2">
+                                <p><strong>Company:</strong> {job.company}</p>
+                                <p><strong>Location:</strong> {job.location}</p>
+                                {job.type && <p><strong>Type:</strong> {job.type}</p>}
+                                {job.postedAt && <p><strong>Posted:</strong> {new Date(job.postedAt).toLocaleDateString()}</p>}
+                                {job.salaryRange && job.salaryRange !== 'Salary not specified' && <p><strong>Salary:</strong> {job.salaryRange}</p>}
+                                {job.experience && job.experience !== 'Not specified' && <p><strong>Experience:</strong> {job.experience}</p>}
+                                {job.requiredSkills && job.requiredSkills !== 'Not specified' && <p><strong>Skills:</strong> {job.requiredSkills}</p>}
+                                <div className="mt-4">
+                                  <strong>Description:</strong>
+                                  <div className="whitespace-pre-line text-sm mt-1">{job.description}</div>
+                                </div>
+                              </div>
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            {job.applyLink && (
+                              <a href={job.applyLink} target="_blank" rel="noopener noreferrer">
+                                <Button type="button">Apply</Button>
+                              </a>
+                            )}
+                            <DialogClose asChild>
+                              <Button type="button" variant="secondary">Close</Button>
+                            </DialogClose>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">No jobs found for this company.</div>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen py-12 bg-background">
@@ -380,11 +508,32 @@ export default function Jobs() {
               )}
             </div>
           )}
-          <p className="text-muted-foreground">
-            {loading ? "Searching..." : `Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
-          </p>
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-4 mb-4">
+            <p className="text-muted-foreground">
+              {loading ? "Searching..." : `Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'jobs' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('jobs')}
+              >
+                View Jobs
+              </Button>
+              <Button
+                variant={viewMode === 'companies' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('companies')}
+              >
+                Browse by Company
+              </Button>
+            </div>
+          </div>
         </div>
-        {renderJobCards()}
+        
+        {viewMode === 'jobs' ? renderJobCards() : renderCompanyCards()}
       </div>
     </section>
   );
