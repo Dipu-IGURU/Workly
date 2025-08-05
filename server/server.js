@@ -12,8 +12,22 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:8080',
+  'https://can-hiring.vercel.app',
+  'https://www.can-hiring.vercel.app'
+];
+
 app.use(cors({
-  origin: 'http://localhost:8080', // Frontend origin
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -42,16 +56,22 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Workly API is running!' });
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+// Database connection with retry logic
+const connectWithRetry = () => {
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/workly';
+  
+  mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
   })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error);
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    console.log('Retrying MongoDB connection in 5 seconds...');
+    setTimeout(connectWithRetry, 5000);
   });
+};
 
 module.exports = app;
