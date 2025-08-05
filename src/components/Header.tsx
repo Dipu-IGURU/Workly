@@ -129,13 +129,31 @@ const Header = () => {
                   <ChevronDown className="w-4 h-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <Link to="/about">
-                    About us
-                  </Link>
-                  <DropdownMenuItem>Contact</DropdownMenuItem>
-                  <DropdownMenuItem>FAQ</DropdownMenuItem>
-                  <DropdownMenuItem>Terms & Conditions</DropdownMenuItem>
-                  <DropdownMenuItem>Privacy Policy</DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/about" className="w-full">
+                      About Us
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/contact" className="w-full">
+                      Contact
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/faq" className="w-full">
+                      FAQ
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/terms" className="w-full">
+                      Terms & Conditions
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/privacy" className="w-full">
+                      Privacy Policy
+                    </Link>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -266,11 +284,21 @@ const Header = () => {
                     <div className="pb-2">
                       <h3 className="font-semibold text-foreground mb-3 text-base">Pages</h3>
                       <div className="space-y-3 pl-3">
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">About Us</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Contact</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">FAQ</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Terms & Conditions</p>
-                        <p className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors py-1">Privacy Policy</p>
+                        <Link to="/about" className="block">
+                          <p className="text-sm text-muted-foreground hover:text-primary transition-colors py-1">About Us</p>
+                        </Link>
+                        <Link to="/contact" className="block">
+                          <p className="text-sm text-muted-foreground hover:text-primary transition-colors py-1">Contact</p>
+                        </Link>
+                        <Link to="/faq" className="block">
+                          <p className="text-sm text-muted-foreground hover:text-primary transition-colors py-1">FAQ</p>
+                        </Link>
+                        <Link to="/terms" className="block">
+                          <p className="text-sm text-muted-foreground hover:text-primary transition-colors py-1">Terms & Conditions</p>
+                        </Link>
+                        <Link to="/privacy" className="block">
+                          <p className="text-sm text-muted-foreground hover:text-primary transition-colors py-1">Privacy Policy</p>
+                        </Link>
                       </div>
                     </div>
                   </div>
