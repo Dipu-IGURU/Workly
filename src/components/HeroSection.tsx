@@ -2,9 +2,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import heroManImage from "@/assets/hero-man.png";
 
 const HeroSection = () => {
+  const [jobTitle, setJobTitle] = useState("");
+  const [location, setLocation] = useState("");
+  const navigate = useNavigate();
+
+  // Canadian cities and provinces for suggestions
+  const canadianLocations = [
+    "Toronto, ON", "Vancouver, BC", "Montreal, QC", "Calgary, AB", "Edmonton, AB",
+    "Ottawa, ON", "Mississauga, ON", "Winnipeg, MB", "Quebec City, QC", "Hamilton, ON",
+    "Brampton, ON", "Surrey, BC", "Laval, QC", "Halifax, NS", "London, ON",
+    "Markham, ON", "Vaughan, ON", "Gatineau, QC", "Saskatoon, SK", "Longueuil, QC",
+    "Burnaby, BC", "Regina, SK", "Richmond, BC", "Richmond Hill, ON", "Oakville, ON",
+    "Burlington, ON", "Greater Sudbury, ON", "Sherbrooke, QC", "Oshawa, ON", "Saguenay, QC"
+  ];
+
+  const handleSearch = () => {
+    const searchParams = new URLSearchParams();
+    
+    if (jobTitle.trim()) {
+      searchParams.set('job_title', jobTitle.trim());
+    }
+    
+    if (location.trim()) {
+      searchParams.set('location', location.trim());
+    }
+    
+    // Navigate to jobs page with search parameters
+    navigate(`/jobs?${searchParams.toString()}`);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handlePopularSearch = (tag: string) => {
+    setJobTitle(tag);
+    const searchParams = new URLSearchParams();
+    searchParams.set('job_title', tag);
+    navigate(`/jobs?${searchParams.toString()}`);
+  };
+
   return (
     <section className="bg-hero-bg py-16 lg:py-20 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,7 +61,7 @@ const HeroSection = () => {
               For you!
             </h1>
             <p className="text-lg text-muted-foreground mt-4 mb-8">
-              Find Jobs, Employment & Career Opportunities
+              Find Jobs, Employment & Career Opportunities in Canada
             </p>
 
             <div className="bg-background rounded-lg p-4 shadow-lg border border-border">
@@ -25,8 +69,11 @@ const HeroSection = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
-                    placeholder="Job title, keywords, or company"
+                    placeholder="Job title, keywords..."
                     className="pl-10"
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                    onKeyPress={handleKeyPress}
                   />
                 </div>
                 <div className="relative">
@@ -34,9 +81,18 @@ const HeroSection = () => {
                   <Input
                     placeholder="City or postcode"
                     className="pl-10"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    list="canadian-cities"
                   />
+                  <datalist id="canadian-cities">
+                    {canadianLocations.map((city) => (
+                      <option key={city} value={city} />
+                    ))}
+                  </datalist>
                 </div>
-                <Button className="w-full">
+                <Button className="w-full" onClick={handleSearch}>
                   Find Jobs
                 </Button>
               </div>
@@ -46,7 +102,12 @@ const HeroSection = () => {
               <p className="text-sm text-muted-foreground mb-2">Popular Searches:</p>
               <div className="flex flex-wrap gap-2">
                 {["Designer", "Developer", "Web", "IOS", "PHP", "Senior", "Engineer"].map((tag) => (
-                  <Badge key={tag} variant="secondary" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => handlePopularSearch(tag)}
+                  >
                     {tag}
                   </Badge>
                 ))}

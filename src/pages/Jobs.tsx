@@ -35,6 +35,8 @@ export default function Jobs() {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const category = params.get("category") ?? "";
+  const jobTitle = params.get("job_title") ?? "";
+  const searchLocation = params.get("location") ?? "";
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -59,11 +61,11 @@ export default function Jobs() {
             return { ok: false, json: () => ({ jobs: [] }), status: 500 };
           }),
           
-          // JSearch API jobs
+          // JSearch API jobs - Updated for Canada
           fetch(
             `https://${import.meta.env.VITE_RAPIDAPI_HOST}/search?query=${encodeURIComponent(
-              category || 'developer'
-            )}%20jobs%20in%20chicago&page=1&num_pages=1&country=us&date_posted=all`,
+              jobTitle || category || 'developer'
+            )}%20jobs%20in%20${encodeURIComponent(searchLocation || 'canada')}&page=1&num_pages=1&country=ca&date_posted=all`,
             {
               method: 'GET',
               headers: {
@@ -149,10 +151,28 @@ export default function Jobs() {
 
         // Combine and filter jobs
         const allJobs = [...mongoJobs, ...formattedApiJobs];
-        const jobTitleQuery = params.get("job_title")?.toLowerCase() || params.get("title")?.toLowerCase();
-        const filteredJobs = jobTitleQuery
-          ? allJobs.filter(job => job.title.toLowerCase().includes(jobTitleQuery))
-          : allJobs;
+        
+        // Apply filters
+        let filteredJobs = allJobs;
+        
+        // Filter by job title/keywords
+        if (jobTitle) {
+          const titleQuery = jobTitle.toLowerCase();
+          filteredJobs = filteredJobs.filter(job =>
+            job.title.toLowerCase().includes(titleQuery) ||
+            job.description.toLowerCase().includes(titleQuery) ||
+            job.company.toLowerCase().includes(titleQuery)
+          );
+        }
+        
+        // Filter by location (for Canadian locations)
+        if (searchLocation) {
+          const locationQuery = searchLocation.toLowerCase();
+          filteredJobs = filteredJobs.filter(job =>
+            job.location.toLowerCase().includes(locationQuery) ||
+            job.location.toLowerCase().includes(locationQuery.split(',')[0]) // Match city part
+          );
+        }
 
         setJobs(filteredJobs);
       } catch (err) {
@@ -164,7 +184,7 @@ export default function Jobs() {
     };
 
     fetchJobs();
-  }, [category, params]);
+  }, [category, jobTitle, searchLocation, params]);
 
   // Render job cards
   const renderJobCards = () => {
@@ -254,12 +274,44 @@ export default function Jobs() {
     );
   };
 
+  const getPageTitle = () => {
+    if (jobTitle && searchLocation) {
+      return `${jobTitle} Jobs in ${searchLocation}`;
+    } else if (jobTitle) {
+      return `${jobTitle} Jobs in Canada`;
+    } else if (searchLocation) {
+      return `Jobs in ${searchLocation}`;
+    } else if (category) {
+      return `Jobs in ${category}`;
+    }
+    return "All Jobs in Canada";
+  };
+
   return (
     <section className="min-h-screen py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl lg:text-4xl font-bold mb-8 text-foreground">
-          {category ? `Jobs in ${category}` : "All Jobs"}
-        </h1>
+        <div className="mb-8">
+          <h1 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">
+            {getPageTitle()}
+          </h1>
+          {(jobTitle || searchLocation) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {jobTitle && (
+                <Badge variant="secondary" className="text-sm">
+                  Keyword: {jobTitle}
+                </Badge>
+              )}
+              {searchLocation && (
+                <Badge variant="secondary" className="text-sm">
+                  Location: {searchLocation}
+                </Badge>
+              )}
+            </div>
+          )}
+          <p className="text-muted-foreground">
+            {loading ? "Searching..." : `Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
+          </p>
+        </div>
         {renderJobCards()}
       </div>
     </section>
