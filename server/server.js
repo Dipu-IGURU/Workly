@@ -15,7 +15,9 @@ const PORT = process.env.PORT || 5001;
 const allowedOrigins = [
   'http://localhost:8080',
   'https://can-hiring.vercel.app',
-  'https://www.can-hiring.vercel.app'
+  'https://www.can-hiring.vercel.app',
+  'https://can-hiring.onrender.com',
+  'https://www.can-hiring.onrender.com'
 ];
 
 app.use(cors({

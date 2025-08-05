@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: workly-backend
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        value: mongodb+srv://traineeiguru:iTqQo5jkhaCVjZE7@cluster0.tsrijmg.mongodb.net/workly?retryWrites=true&w=majority
+      - key: JWT_SECRET
+        value: dipusignh123h123
+      - key: PORT
+        value: 10000
