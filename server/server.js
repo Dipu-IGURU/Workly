@@ -22,8 +22,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // Allow mobile apps or curl
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
@@ -32,9 +31,10 @@ app.use(cors({
   },
   credentials: true
 }));
+
 app.use(express.json());
 
-// Serve static files from uploads directory
+// Serve uploaded files
 app.use('/uploads', express.static('uploads'));
 
 // Routes
@@ -43,37 +43,42 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
 
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({ message: 'Workly API is running!' });
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err);
-  res.status(500).json({ 
-    success: false, 
+  res.status(500).json({
+    success: false,
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ message: 'Workly API is running!' });
-});
-
 // Database connection with retry logic
 const connectWithRetry = () => {
   const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/workly';
-  
+
   mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
   })
-  .then(() => console.log('MongoDB connected successfully'))
+  .then(() => console.log('✅ MongoDB connected successfully'))
   .catch(err => {
-    console.error('MongoDB connection error:', err);
-    console.log('Retrying MongoDB connection in 5 seconds...');
+    console.error('❌ MongoDB connection error:', err.message);
+    console.log('🔁 Retrying MongoDB connection in 5 seconds...');
     setTimeout(connectWithRetry, 5000);
   });
 };
 
-module.exports = app;
+// Start the app
+connectWithRetry();
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+});
