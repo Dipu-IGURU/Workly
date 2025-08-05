@@ -3,6 +3,7 @@ import { Search, ChevronDown, Menu, User, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/can hiring logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,7 +71,7 @@ const Header = () => {
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
               <img 
-                src="/src/assets/can hiring logo.png" 
+                src={logo} 
                 alt="Can Hiring Logo" 
                 className="h-10 w-auto" 
               />
