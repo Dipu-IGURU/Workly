@@ -14,6 +14,8 @@ const PORT = process.env.PORT || 5001;
 // Middleware
 const allowedOrigins = [
   'http://localhost:8080',
+  'http://localhost:5173', // Vite dev server
+  'http://localhost:3000', // React dev server
   'https://can-hiring.vercel.app',
   'https://www.can-hiring.vercel.app',
   'https://can-hiring.onrender.com',

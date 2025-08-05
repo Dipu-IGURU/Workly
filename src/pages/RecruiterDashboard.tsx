@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,51 +120,35 @@ const RecruiterDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<{[key: string]: boolean}>({});
 
+  const { user: authUser, logout } = useAuth();
+
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-          setUser(data.user);
-          if (data.user.role !== 'recruiter') {
-            navigate('/user-dashboard');
-          }
-        } else {
-          localStorage.removeItem('token');
-          navigate('/login');
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        localStorage.removeItem('token');
-        navigate('/login');
-      } finally {
-        setLoading(false);
+    if (authUser) {
+      // Check if user is a recruiter
+      if (authUser.role !== 'recruiter') {
+        navigate('/user-dashboard');
+        return;
       }
-    };
-
-    fetchUserProfile();
-  }, [navigate]);
+      
+      // Set user data from AuthContext
+      setUser({
+        id: authUser._id || authUser.id,
+        firstName: authUser.firstName,
+        lastName: authUser.lastName,
+        email: authUser.email,
+        role: authUser.role,
+        company: authUser.company || ''
+      });
+      setLoading(false);
+    }
+  }, [authUser, navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     toast({
       title: "Logged out successfully",
       description: "You have been logged out of your account.",
     });
-    navigate('/');
   };
 
   const fetchJobs = async () => {

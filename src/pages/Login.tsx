@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff, User, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/config";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +22,7 @@ const Login = () => {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -67,23 +69,9 @@ const Login = () => {
       if (data.success && data.user && data.token) {
         console.log('Login successful, received data:', data);
         
-        // Clear any existing auth data first
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        
-        // Store token and user data in localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        console.log('Token and user data stored in localStorage');
-        
         // Check if user role matches selected role
         console.log('User role:', data.user.role, 'Selected role:', userRole);
         if (data.user.role !== userRole) {
-          // Clear the stored data since the role doesn't match
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          
           toast({
             title: "Role Mismatch",
             description: `This account is registered as a ${data.user.role}, not a ${userRole}.`,
@@ -93,23 +81,23 @@ const Login = () => {
           return;
         }
 
+        // Use AuthContext login function
+        login(data.token, data.user);
+
         // Show success message
         toast({
           title: "Login Successful",
           description: `Welcome back, ${data.user.firstName}!`,
         });
 
-        // Use a small timeout to allow the toast to be seen
-        setTimeout(() => {
-          // Use window.location.href for a full page reload to ensure auth state is properly set
-          if (data.user.role === 'user') {
-            console.log('Redirecting to /user-dashboard');
-            window.location.href = '/user-dashboard';
-          } else {
-            console.log('Redirecting to /recruiter-dashboard');
-            window.location.href = '/recruiter-dashboard';
-          }
-        }, 500);
+        // Navigate based on role
+        if (data.user.role === 'user') {
+          console.log('Redirecting to /user-dashboard');
+          navigate('/user-dashboard');
+        } else {
+          console.log('Redirecting to /recruiter-dashboard');
+          navigate('/recruiter-dashboard');
+        }
       } else {
         toast({
           title: "Login Failed",
@@ -235,23 +223,20 @@ const Login = () => {
 
                 const data = await response.json();
                 if (response.ok && data.success && data.token && data.user) {
-                  // Store token and user data
-                  localStorage.setItem('token', data.token);
-                  localStorage.setItem('user', JSON.stringify(data.user));
+                  // Use AuthContext login function
+                  login(data.token, data.user);
 
                   toast({
                     title: 'Google Sign-In Successful',
-                    description: `Welcome, ${data.user.name || data.user.email}!`,
+                    description: `Welcome, ${data.user.firstName || data.user.name || data.user.email}!`,
                   });
 
-                  // Redirect based on user role
-                  setTimeout(() => {
-                    if (data.user.role === 'recruiter') {
-                      window.location.href = '/recruiter-dashboard';
-                    } else {
-                      window.location.href = '/user-dashboard';
-                    }
-                  }, 500);
+                  // Navigate based on user role
+                  if (data.user.role === 'recruiter') {
+                    navigate('/recruiter-dashboard');
+                  } else {
+                    navigate('/user-dashboard');
+                  }
                 } else {
                   toast({
                     title: 'Google Sign-In Failed',
