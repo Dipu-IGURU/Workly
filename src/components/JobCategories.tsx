@@ -3,17 +3,18 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 // import { Badge } from "@/components/ui/badge";
-import { 
-  Calculator, 
-  TrendingUp, 
-  Palette, 
-  Code, 
-  Users, 
-  Car, 
-  Headphones, 
+import {
+  Calculator,
+  TrendingUp,
+  Palette,
+  Code,
+  Users,
+  Car,
+  Headphones,
   Heart,
   Briefcase
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/config";
 
 // Data will be fetched from API
 
@@ -66,7 +67,7 @@ const JobCategories: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/jobs/categories")
+    fetch(`${API_BASE_URL}/api/jobs/categories`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {

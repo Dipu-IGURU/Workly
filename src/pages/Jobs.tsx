@@ -106,20 +106,26 @@ export default function Jobs() {
             return { ok: false, json: () => ({ jobs: [] }), status: 500 };
           }),
           
-          // JSearch API jobs - Updated for US (Chicago default)
+          // JSearch API jobs - Using our backend proxy
           fetch(
-            `https://${import.meta.env.VITE_RAPIDAPI_HOST}/search?query=${encodeURIComponent(
+            `${API_BASE_URL}/jobs/search/external?query=${encodeURIComponent(
               jobTitle || getCategorySearchTerm(category) || 'developer'
-            )}%20jobs%20in%20${encodeURIComponent(searchLocation || 'chicago')}&page=1&num_pages=1&country=us&date_posted=all`,
+            )}&location=${encodeURIComponent(searchLocation || 'chicago')}&page=1`,
             {
               method: 'GET',
               headers: {
-                'x-rapidapi-key': import.meta.env.VITE_RAPIDAPI_KEY,
-                'x-rapidapi-host': import.meta.env.VITE_RAPIDAPI_HOST
+                'Content-Type': 'application/json'
               }
             }
-          ).catch(err => {
-            console.error('Error fetching JSearch API:', err);
+          ).then(async (response) => {
+            const data = await response.json();
+            return {
+              ok: response.ok,
+              status: response.status,
+              json: () => Promise.resolve({ data: data.data || [] })
+            };
+          }).catch(err => {
+            console.error('Error fetching JSearch API through proxy:', err);
             return { ok: false, json: () => ({ data: [] }), status: 500 };
           })
         ]);
