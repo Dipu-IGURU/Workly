@@ -153,7 +153,7 @@ const App = () => {
                 </div>
               } />
               
-              <Route path="/recruiter-dashboard" element={
+              <Route path="/recruiter-dashboard" caseSensitive={false} element={
                 <div className="py-6">
                   <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                     <RecruiterDashboard />
