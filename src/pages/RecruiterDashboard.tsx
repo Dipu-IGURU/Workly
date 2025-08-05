@@ -23,7 +23,7 @@ import {
   XCircle,
   ArrowRight
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/config";
 import { JobPostForm } from "@/components/JobPostForm";
 import { JobList } from "@/components/JobList";
@@ -807,12 +807,22 @@ const RecruiterDashboard = () => {
                       <h2 className="text-2xl font-bold text-gray-800">Job Posts</h2>
                       <p className="text-gray-600">Manage your job postings</p>
                     </div>
-                    <JobPostForm onSuccess={handleJobPosted}>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Post New Job
+                    <div className="flex items-center gap-3">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/')}
+                        className="border-gray-300 hover:bg-gray-100"
+                      >
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        View User Home
                       </Button>
-                    </JobPostForm>
+                      <JobPostForm onSuccess={handleJobPosted}>
+                        <Button className="bg-blue-600 hover:bg-blue-700">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Post New Job
+                        </Button>
+                      </JobPostForm>
+                    </div>
                   </div>
                   <Card className="border-0 shadow-sm">
                     <CardContent className="p-6">
