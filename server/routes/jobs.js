@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios');
 
 // Models
 const Job = require('../models/Job');
@@ -384,6 +385,51 @@ router.get('/applications/recruiter', auth, async (req, res) => {
     res.json({ success: true, data: applications });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
+// @route   GET /api/jobs/search/external
+// @desc    Search external jobs via JSearch API
+// @access  Public
+router.get('/search/external', async (req, res) => {
+  try {
+    const { query, location = 'chicago', page = '1' } = req.query;
+    
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: 'Query parameter is required'
+      });
+    }
+
+    const options = {
+      method: 'GET',
+      url: `https://jsearch.p.rapidapi.com/search`,
+      params: {
+        query: `${query} jobs in ${location}`,
+        page: page,
+        num_pages: '1',
+        country: 'us',
+        date_posted: 'all'
+      },
+      headers: {
+        'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+        'x-rapidapi-host': 'jsearch.p.rapidapi.com'
+      }
+    };
+
+    const response = await axios.request(options);
+    res.json({
+      success: true,
+      data: response.data.data || []
+    });
+  } catch (error) {
+    console.error('JSearch API error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching jobs from JSearch API',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
