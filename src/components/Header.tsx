@@ -69,10 +69,11 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">W</span>
-              </div>
-              <span className="ml-2 text-xl font-bold text-foreground">Workly</span>
+              <img 
+                src="/src/assets/can hiring logo.png" 
+                alt="Can Hiring Logo" 
+                className="h-10 w-auto" 
+              />
             </Link>
           </div>
 

@@ -38,11 +38,11 @@ export default function Jobs() {
           : `${API_BASE_URL}/jobs/public`;
         const [mongoRes, apiRes] = await Promise.all([
           fetch(url),
-          fetch(`https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(category || 'developer')}%20jobs%20in%20canada&page=1&num_pages=1&country=ca&date_posted=all`, {
+          fetch(`https://${import.meta.env.VITE_RAPIDAPI_HOST}/search?query=${encodeURIComponent(category || 'developer')}%20jobs%20in%20chicago&page=1&num_pages=1&country=us&date_posted=all`, {
             method: 'GET',
             headers: {
-              'x-rapidapi-key': '6e69e20a50mshf07727d408f0cc9p11790bjsn94f0092644fa',
-              'x-rapidapi-host': 'jsearch.p.rapidapi.com'
+              'x-rapidapi-key': import.meta.env.VITE_RAPIDAPI_KEY,
+              'x-rapidapi-host': import.meta.env.VITE_RAPIDAPI_HOST
             }
           })
         ]);

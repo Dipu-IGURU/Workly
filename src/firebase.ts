@@ -3,13 +3,13 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDG5l31NWA0K61SEMN7I__K57lSgx8hDhk",
-  authDomain: "workly-d2a93.firebaseapp.com",
-  projectId: "workly-d2a93",
-  storageBucket: "workly-d2a93.firebasestorage.app",
-  messagingSenderId: "1068932257538",
-  appId: "1:1068932257538:web:752fc0b1f1be724a75541b",
-  measurementId: "G-BVHBLMKMQJ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

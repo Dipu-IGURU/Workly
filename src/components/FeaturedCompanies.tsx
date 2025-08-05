@@ -14,12 +14,12 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
-const API_URL = 'https://jsearch.p.rapidapi.com/search?query=developer%20jobs%20in%20canada&page=1&num_pages=1&country=ca&date_posted=all';
+const API_URL = `https://${import.meta.env.VITE_RAPIDAPI_HOST}/search?query=developer%20jobs%20in%20chicago&page=1&num_pages=1&country=us&date_posted=all`;
 const API_OPTIONS = {
   method: 'GET',
   headers: {
-    'x-rapidapi-key': '6e69e20a50mshf07727d408f0cc9p11790bjsn94f0092644fa',
-    'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+    'x-rapidapi-key': import.meta.env.VITE_RAPIDAPI_KEY,
+    'x-rapidapi-host': import.meta.env.VITE_RAPIDAPI_HOST,
   },
 };
 

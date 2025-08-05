@@ -9,10 +9,11 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">W</span>
-              </div>
-              <span className="ml-2 text-xl font-bold">Workly</span>
+              <img 
+                src="/src/assets/canhiring.png" 
+                alt="Can Hiring Logo" 
+                className="h-10 w-auto" 
+              />
             </div>
             <p className="text-background/70 mb-4">
               Call now: <span className="text-background font-medium">(319) 555-0115</span>
