@@ -2,14 +2,57 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import heroManImage from "@/assets/hero-man.png";
 
 const HeroSection = () => {
   const [jobTitle, setJobTitle] = useState("");
   const [location, setLocation] = useState("");
+  const [showLocations, setShowLocations] = useState(false);
+  const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const locationListRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setFilteredLocations(canadianLocations);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (locationListRef.current && !locationListRef.current.contains(event.target as Node) &&
+          locationInputRef.current && !locationInputRef.current.contains(event.target as Node)) {
+        setShowLocations(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocation(value);
+    
+    if (value) {
+      const filtered = canadianLocations.filter(city => 
+        city.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredLocations(filtered);
+    } else {
+      setFilteredLocations(canadianLocations);
+    }
+    
+    setShowLocations(true);
+  };
+
+  const selectLocation = (city: string) => {
+    setLocation(city);
+    setShowLocations(false);
+  };
 
   // Canadian cities and provinces for suggestions
   const canadianLocations = [
@@ -76,21 +119,33 @@ const HeroSection = () => {
                     onKeyPress={handleKeyPress}
                   />
                 </div>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <div className="relative" ref={locationListRef}>
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
                   <Input
+                    ref={locationInputRef}
                     placeholder="City or postcode"
-                    className="pl-10"
+                    className="pl-10 relative z-0"
                     value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    onChange={handleLocationChange}
                     onKeyPress={handleKeyPress}
-                    list="canadian-cities"
+                    onFocus={() => setShowLocations(true)}
                   />
-                  <datalist id="canadian-cities">
-                    {canadianLocations.map((city) => (
-                      <option key={city} value={city} />
-                    ))}
-                  </datalist>
+                  {showLocations && filteredLocations.length > 0 && (
+                    <div className="absolute bottom-full mb-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-[200px] overflow-y-auto z-50">
+                      <div className="divide-y divide-gray-100">
+                        {filteredLocations.map((city) => (
+                          <div
+                            key={city}
+                            className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis"
+                            onClick={() => selectLocation(city)}
+                            title={city}
+                          >
+                            {city}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <Button className="w-full" onClick={handleSearch}>
                   Find Jobs
