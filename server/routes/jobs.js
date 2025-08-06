@@ -245,7 +245,7 @@ router.post('/:id/apply', auth, upload.single('resume'), async (req, res) => {
     // Prevent duplicate applications
     const existingApplication = await Application.findOne({
       jobId: jobId,
-      applicant: req.user._id
+      applicantId: req.user._id
     });
 
     if (existingApplication) {
@@ -290,7 +290,7 @@ router.post('/:id/apply', auth, upload.single('resume'), async (req, res) => {
     // Create application record
     const application = new Application({
       jobId,
-      applicant: req.user._id,
+      applicantId: req.user._id,
       status: 'pending',
       fullName,
       email,
@@ -340,7 +340,28 @@ router.post('/:id/apply', auth, upload.single('resume'), async (req, res) => {
     });
   } catch (err) {
     console.error('Error applying to job:', err);
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+
+    // Duplicate application attempt (handled in Application pre-save hook or Mongo unique index)
+    if (err.message === 'You have already applied to this job' || err.code === 11000 || (typeof err.message === 'string' && err.message.includes('E11000'))) {
+      return res.status(400).json({ success: false, message: 'You have already applied to this job' });
+    }
+
+    // Mongoose validation errors
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+
+    // Multer file upload or validation errors (e.g. wrong file type / file too large)
+    if (err instanceof multer.MulterError || err.message?.startsWith('Only PDF') || err.message?.includes('File too large')) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+
+    // Fallback – unknown server error
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
   }
 });
 

@@ -6,7 +6,7 @@ const applicationSchema = new mongoose.Schema({
     ref: 'Job',
     required: true
   },
-  applicant: {
+  applicantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -102,7 +102,7 @@ const applicationSchema = new mongoose.Schema({
 });
 
 // Add indexes for better query performance
-applicationSchema.index({ jobId: 1, applicant: 1 }, { unique: true });
+applicationSchema.index({ jobId: 1, applicantId: 1 }, { unique: true });
 applicationSchema.index({ status: 1 });
 applicationSchema.index({ appliedAt: -1 });
 
@@ -117,7 +117,7 @@ applicationSchema.virtual('jobDetails', {
 // Virtual for applicant details
 applicationSchema.virtual('applicantDetails', {
   ref: 'User',
-  localField: 'applicant',
+  localField: 'applicantId',
   foreignField: '_id',
   justOne: true
 });
@@ -126,7 +126,7 @@ applicationSchema.virtual('applicantDetails', {
 applicationSchema.pre('save', async function(next) {
   const existingApplication = await this.constructor.findOne({
     jobId: this.jobId,
-    applicant: this.applicant,
+    applicantId: this.applicantId,
     _id: { $ne: this._id }
   });
 
