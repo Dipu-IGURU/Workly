@@ -321,15 +321,13 @@ router.post('/:id/apply', auth, upload.single('resume'), async (req, res) => {
 
     await user.save();
 
-    // Add application to job's applicants
-    job.applicants.push({
-      user: req.user._id,
-      application: application._id,
-      appliedAt: new Date()
-    });
-    if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
-    if (!job.applicants.some(a => a.user.toString() === user._id.toString())) {
-      job.applicants.push({ user: user._id });
+    // Add application to job's applicants only if not already added
+    if (!job.applicants.some(a => a.user.toString() === req.user._id.toString())) {
+      job.applicants.push({
+        user: req.user._id,
+        application: application._id,
+        appliedAt: new Date()
+      });
       await job.save();
     }
 
