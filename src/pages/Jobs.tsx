@@ -75,7 +75,7 @@ export default function Jobs() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'jobs' | 'companies'>('jobs');
+  const [viewMode, setViewMode] = useState<'jobs' | 'companies'>('companies');
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const location = useLocation();
@@ -509,31 +509,14 @@ export default function Jobs() {
             </div>
           )}
           
-          {/* View Mode Toggle */}
           <div className="flex items-center gap-4 mb-4">
             <p className="text-muted-foreground">
-              {loading ? "Searching..." : `Found ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
+              {loading ? "Searching..." : `Found ${companies.length} compan${companies.length !== 1 ? 'ies' : 'y'}`}
             </p>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'jobs' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('jobs')}
-              >
-                View Jobs
-              </Button>
-              <Button
-                variant={viewMode === 'companies' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('companies')}
-              >
-                Browse by Company
-              </Button>
-            </div>
           </div>
         </div>
         
-        {viewMode === 'jobs' ? renderJobCards() : renderCompanyCards()}
+        {renderCompanyCards()}
       </div>
     </section>
   );
