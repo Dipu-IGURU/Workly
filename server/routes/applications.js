@@ -78,7 +78,7 @@ router.get('/recruiter/applications', auth, async (req, res) => {
     // Find applications for these jobs
     const applications = await Application.find({ jobId: { $in: jobIds } })
       .populate('jobId', 'title')
-      .populate('applicant', 'firstName lastName email')
+      .populate('applicantId', 'firstName lastName email')
       .sort({ appliedAt: -1 });
     
     console.log('Found applications:', applications);
@@ -88,7 +88,7 @@ router.get('/recruiter/applications', auth, async (req, res) => {
       _id: app._id,
       jobId: app.jobId._id,
       jobTitle: app.jobId.title,
-      applicant: app.applicant,
+      applicant: app.applicantId,
       appliedAt: app.appliedAt,
       status: app.status
     }));
@@ -134,7 +134,7 @@ router.get('/recruiter/applications', auth, async (req, res) => {
 router.get('/:applicationId', async (req, res) => {
   try {
     const { applicationId } = req.params;
-    const application = await Application.findById(applicationId).populate('applicant', 'firstName lastName email avatar');
+    const application = await Application.findById(applicationId).populate('applicantId', 'firstName lastName email avatar');
     if (!application) {
       return res.status(404).json({ success: false, message: 'Application not found' });
     }

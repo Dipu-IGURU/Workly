@@ -53,7 +53,7 @@ const upload = multer({
 router.post('/', auth, async (req, res) => {
   try {
     const {
-      title, type, workType, location, vacancies,
+      title, type, workType, location, category, vacancies,
       company, companyWebsite, companyDescription,
       description, responsibilities, requiredSkills, preferredQualifications, experience, education,
       salaryRange, benefits,
@@ -63,7 +63,7 @@ router.post('/', auth, async (req, res) => {
 
     // Validate required fields
     const requiredFields = [
-      'title', 'type', 'workType', 'location', 'company', 'description',
+      'title', 'type', 'workType', 'location', 'category', 'company', 'description',
       'responsibilities', 'requiredSkills', 'experience', 'salaryRange',
       'applicationDeadline', 'workHours', 'howToApply', 'contactEmail'
     ];
@@ -77,7 +77,7 @@ router.post('/', auth, async (req, res) => {
 
     // Create new job
     const newJob = new Job({
-      title, type, workType, location, vacancies,
+      title, type, workType, location, category, vacancies,
       company, companyWebsite, companyDescription,
       description, responsibilities, requiredSkills, preferredQualifications, experience, education,
       salaryRange, benefits,

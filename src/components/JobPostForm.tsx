@@ -14,6 +14,7 @@ export interface JobPostData {
   type: string;
   workType: string;
   location: string;
+  category: string;
   vacancies?: string;
   
   // Company Information
@@ -57,6 +58,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
     type: 'Full-time',  // Must be one of: 'Full-time', 'Part-time', 'Contract', 'Remote'
     workType: 'On-site',
     location: '',
+    category: '',
     vacancies: '',
     
     // Company Information
@@ -102,6 +104,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
       { field: 'title', name: 'Job Title' },
       { field: 'company', name: 'Company Name' },
       { field: 'location', name: 'Location' },
+    { field: 'category', name: 'Category' },
       { field: 'type', name: 'Job Type' },
       { field: 'description', name: 'Job Description' },
       { field: 'responsibilities', name: 'Job Responsibilities' },
@@ -168,6 +171,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
       const jobData = {
         // Basic Job Information
         title: formData.title.trim(),
+        category: formData.category.trim(),
         type: formData.type,
         workType: formData.workType,
         location: formData.location.trim(),
@@ -240,6 +244,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
         type: 'Full-time',
         workType: 'On-site',
         location: '',
+        category: '',
         vacancies: '',
         
         // Company Information
@@ -341,7 +346,10 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="workType">Work Type *</Label>
+                <Label htmlFor="category">Category *</Label>
+              <Input id="category" name="category" value={formData.category} onChange={handleChange} placeholder="e.g. Engineering" className="mb-4" />
+
+              <Label htmlFor="workType">Work Type *</Label>
                 <select
                   id="workType"
                   name="workType"
