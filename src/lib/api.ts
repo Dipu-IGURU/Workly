@@ -1,5 +1,5 @@
-// Use environment variable if available, otherwise use production URL
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://your-render-backend-url.onrender.com/api';
+// API base URL - points to the Render backend
+export const API_BASE_URL = 'https://can-hiring.onrender.com/api';
 
 // For local development, you can uncomment the line below
 // export const API_BASE_URL = 'http://localhost:5001/api';
