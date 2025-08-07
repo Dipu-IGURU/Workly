@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +51,7 @@ const FeaturedJobs = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/jobs/public');
+        const response = await fetch(`${API_BASE_URL}/jobs/public`);
         if (response.ok) {
           const data: JobsResponse = await response.json().catch(() => ({ data: [], success: false }));
           if (data.success && Array.isArray(data.data)) {
