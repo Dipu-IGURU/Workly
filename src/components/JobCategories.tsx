@@ -66,7 +66,13 @@ const JobCategories: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/jobs/categories")
+    // Use fallback categories since we don't have a categories endpoint yet
+    setCategories(fallbackCategories);
+    setLoading(false);
+    
+    // If we implement a categories endpoint in the future, we can use this code:
+    /*
+    fetch(`${API_BASE_URL}/jobs/categories`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -74,14 +80,16 @@ const JobCategories: React.FC = () => {
           setCategories(filtered.length ? filtered : fallbackCategories);
         } else {
           setError("Failed to load categories");
+          setCategories(fallbackCategories);
         }
       })
       .catch((err) => {
-        console.error(err);
+        console.error("Error fetching categories:", err);
         setCategories(fallbackCategories);
-        setError("Failed to load categories");
+        setError("Failed to load categories. Using sample data.");
       })
       .finally(() => setLoading(false));
+    */
   }, []);
 
   return (
