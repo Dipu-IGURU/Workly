@@ -327,7 +327,7 @@ export function JobList({ jobs, onEdit, onDelete, showActions = true }: JobListP
                     }
 
                     // Send application
-                    const response = await fetch('http://localhost:5001/api/jobs/apply', {
+                    const response = await fetch('/api/jobs/apply', {
                       method: 'POST',
                       headers: {
                         'Authorization': `Bearer ${token}`

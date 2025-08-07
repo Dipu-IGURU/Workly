@@ -206,7 +206,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
 
       console.log('Submitting job data:', JSON.stringify(jobData, null, 2));
 
-      const response = await fetch('http://localhost:5001/api/jobs', {
+      const response = await fetch('/api/jobs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
