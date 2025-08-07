@@ -1,5 +1,5 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://canhiringcn12.vercel.app';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://can-hiring.onrender.com';
 
 // Check if we're in development mode
 export const isDevelopment = import.meta.env.DEV;
