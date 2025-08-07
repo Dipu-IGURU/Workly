@@ -45,6 +45,11 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
 
+// Root route for base URL
+app.get('/', (req, res) => {
+  res.send('Workly backend is running. For API status, visit /api/health');
+});
+
 // Health check route
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Workly API is running!' });
