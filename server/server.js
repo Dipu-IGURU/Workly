@@ -47,7 +47,39 @@ app.use('/api/applications', applicationRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
-  res.json({ message: 'Workly API is running!' });
+  res.json({ 
+    status: 'API is running',
+    timestamp: new Date().toISOString(),
+    database: 'Not checked'
+  });
+});
+
+// MongoDB health check route
+app.get('/api/health/db', async (req, res) => {
+  try {
+    // Get the raw client from mongoose
+    const client = mongoose.connection.client;
+    // Run a simple command to check the connection
+    await client.db().command({ ping: 1 });
+    
+    res.json({
+      status: 'success',
+      message: 'Successfully connected to MongoDB',
+      dbState: mongoose.connection.readyState,
+      dbName: mongoose.connection.name,
+      dbHost: mongoose.connection.host,
+      dbPort: mongoose.connection.port,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to connect to MongoDB',
+      error: error.message,
+      dbState: mongoose.connection.readyState,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Global error handler
