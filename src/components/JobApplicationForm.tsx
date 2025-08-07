@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from "./ui/button";
+import { API_BASE_URL } from "@/lib/config";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -88,7 +89,7 @@ export function JobApplicationForm({
         formDataToSend.append('resume', formData.resume);
       }
 
-      const response = await fetch(`http://localhost:5001/api/jobs/${jobId}/apply`, {
+      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/apply`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

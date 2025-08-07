@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Calendar, FileText, Globe } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Experience {
   position: string;
@@ -120,7 +121,7 @@ const ViewProfile = () => {
       
       console.log('Updating application status:', { applicationId: appId, status });
       
-      const response = await fetch(`http://localhost:5001/api/applications/${appId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/applications/${appId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +172,7 @@ const ViewProfile = () => {
           const token = localStorage.getItem('token');
           const headers: HeadersInit = { 'Content-Type': 'application/json' };
           if (token) headers['Authorization'] = `Bearer ${token}`;
-          const response = await fetch(`http://localhost:5001/api/applications?userId=${userId}&sort=desc&limit=1`, { headers });
+          const response = await fetch(`${API_BASE_URL}/applications?userId=${userId}&sort=desc&limit=1`, { headers });
           const data = await response.json();
           if (data.success && data.applications && data.applications.length > 0) {
             appId = data.applications[0]._id;
@@ -182,7 +183,7 @@ const ViewProfile = () => {
           const token = localStorage.getItem('token');
           const headers: HeadersInit = { 'Content-Type': 'application/json' };
           if (token) headers['Authorization'] = `Bearer ${token}`;
-          const response = await fetch(`http://localhost:5001/api/applications/${appId}`, { headers });
+          const response = await fetch(`${API_BASE_URL}/applications/${appId}`, { headers });
           const data = await response.json();
           if (!response.ok) throw new Error(data.message || 'Failed to load application');
           setApplication(data.application);
@@ -199,7 +200,7 @@ const ViewProfile = () => {
           setLoading(true);
           
           // Build the URL with applicationId as a query parameter if it exists
-          const url = new URL(`http://localhost:5001/api/auth/profile/${userId}`);
+          const url = new URL(`${API_BASE_URL}/auth/profile/${userId}`);
           if (applicationId) {
             url.searchParams.append('applicationId', applicationId);
           }
@@ -453,7 +454,7 @@ const ViewProfile = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-muted-foreground">Resume uploaded: {app.resume}</p>
                   <Button variant="outline" className="mt-2" asChild>
-                    <a href={`http://localhost:5001/${app.resume}`} target="_blank" rel="noopener noreferrer">
+                    <a href={`${API_BASE_URL}/${app.resume}`} target="_blank" rel="noopener noreferrer">
                       View Resume
                     </a>
                   </Button>
@@ -720,7 +721,7 @@ const ViewProfile = () => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-muted-foreground">Resume uploaded: {profile.resume}</p>
                 <Button variant="outline" className="mt-2" asChild>
-                  <a href={`http://localhost:5001/${profile.resume}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`${API_BASE_URL}/${profile.resume}`} target="_blank" rel="noopener noreferrer">
                     View Resume
                   </a>
                 </Button>

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "./ui/button";
+import { API_BASE_URL } from "@/lib/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
@@ -82,7 +83,7 @@ export function JobList({ jobs, onEdit, onDelete, showActions = true }: JobListP
     if (window.confirm('Are you sure you want to delete this job posting?')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5001/api/jobs/${jobId}`, {
+        const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -327,7 +328,7 @@ export function JobList({ jobs, onEdit, onDelete, showActions = true }: JobListP
                     }
 
                     // Send application
-                    const response = await fetch('http://localhost:5001/api/jobs/apply', {
+                    const response = await fetch(`${API_BASE_URL}/jobs/apply`, {
                       method: 'POST',
                       headers: {
                         'Authorization': `Bearer ${token}`

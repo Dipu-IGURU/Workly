@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { API_BASE_URL } from "@/lib/config";
 import { 
   Briefcase,
   MapPin,
@@ -43,7 +44,7 @@ const AppliedJobs = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5001/api/profile/applied-jobs', {
+        const response = await fetch(`${API_BASE_URL}/profile/applied-jobs`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         

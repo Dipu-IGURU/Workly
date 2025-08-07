@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '@/lib/config';
 
 interface UserData {
   id: string;
@@ -33,7 +34,7 @@ export function useUser() {
         }
 
         // Then fetch fresh data
-        const response = await fetch('http://localhost:5001/api/auth/profile', {
+        const response = await fetch(`${API_BASE_URL}/auth/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 

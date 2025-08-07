@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
+import { API_BASE_URL } from "@/lib/config";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -206,7 +207,7 @@ export function JobPostForm({ onSuccess, children }: JobPostFormProps) {
 
       console.log('Submitting job data:', JSON.stringify(jobData, null, 2));
 
-      const response = await fetch('http://localhost:5001/api/jobs', {
+      const response = await fetch(`${API_BASE_URL}/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

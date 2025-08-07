@@ -8,6 +8,7 @@ import { Briefcase, MapPin, Clock, DollarSign, Calendar, Building, Globe, Mail, 
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import { JobApplicationForm } from "@/components/JobApplicationForm";
+import { API_BASE_URL } from '@/lib/api';
 
 type JobDetails = {
   applyUrl: any;
@@ -63,7 +64,7 @@ export default function JobDetails() {
 
     const fetchJobDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/jobs/${id}`);
+        const response = await fetch(`${API_BASE_URL}/jobs/${id}`);
 
         if (!response.ok) throw new Error('Failed to fetch job');
         const data = await response.json();

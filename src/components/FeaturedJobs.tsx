@@ -260,7 +260,7 @@ const FeaturedJobs = () => {
                 // Optionally, you can still upload the resume/cover letter to another endpoint if needed
                 const token = localStorage.getItem('token');
                 if (!token) throw new Error('No authentication token found');
-                const response = await fetch(`http://localhost:5001/api/jobs/${selectedJob._id}/apply`, {
+                const response = await fetch(`${API_BASE_URL}/jobs/${selectedJob._id}/apply`, {
                   method: 'POST',
                   headers: { 'Authorization': `Bearer ${token}` },
                 });

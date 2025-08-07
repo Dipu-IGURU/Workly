@@ -1,5 +1,5 @@
-// API base URL - points to the Render backend
-export const API_BASE_URL = 'https://can-hiring.onrender.com/api';
+// API base URL - points to the Vercel backend
+export const API_BASE_URL = 'https://canhiringcn12.vercel.app/api';
 
 // For local development, you can uncomment the line below
 // export const API_BASE_URL = 'http://localhost:5001/api';

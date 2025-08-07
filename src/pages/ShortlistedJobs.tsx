@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/lib/config";
 import { 
   Briefcase, 
   MapPin, 
@@ -18,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 interface ShortlistedJob {
   id: string;
@@ -55,8 +57,7 @@ const ShortlistedJobs: React.FC = () => {
           return;
         }
 
-        // This is a placeholder - replace with actual API endpoint
-        const response = await fetch('http://localhost:5001/api/jobs/shortlisted', {
+        const response = await fetch(`${API_BASE_URL}/jobs/shortlisted`, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -147,8 +148,7 @@ const ShortlistedJobs: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      // This is a placeholder - replace with actual API endpoint
-      await fetch(`http://localhost:5001/api/jobs/shortlisted/${jobId}`, {
+      await fetch(`${API_BASE_URL}/jobs/shortlisted/${jobId}`, {
         method: 'DELETE',
         headers: { 
           'Authorization': `Bearer ${token}`
