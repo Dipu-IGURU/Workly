@@ -25,7 +25,9 @@ const corsOptions = {
       'https://can-hiring.vercel.app',
       'https://www.can-hiring.vercel.app',
       'https://can-hiring.onrender.com',
-      'https://www.can-hiring.onrender.com'
+      'https://www.can-hiring.onrender.com',
+      'https://workly-tawny.vercel.app',
+      'https://www.workly-tawny.vercel.app'
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests)
