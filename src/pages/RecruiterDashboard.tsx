@@ -543,9 +543,9 @@ const RecruiterDashboard = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">W</span>
+                <span className="text-white font-bold text-sm">C</span>
               </div>
-              <span className="ml-2 text-xl font-bold text-gray-800">Workly</span>
+              <span className="ml-2 text-xl font-bold text-gray-800">Can Hiring</span>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">

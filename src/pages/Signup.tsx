@@ -110,7 +110,7 @@ const Signup = () => {
         
         toast({
           title: "Account Created Successfully",
-          description: `Welcome to Workly, ${data.user.firstName}!`,
+          description: `Welcome to Can Hiring, ${data.user.firstName}!`,
         });
 
         // Redirect to appropriate dashboard
@@ -144,7 +144,7 @@ const Signup = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
           <CardDescription className="text-center">
-            Join Workly and start your journey
+            Join Can Hiring and start your journey
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -19,7 +19,7 @@ const PrivacyPolicy = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-muted-foreground">
-              At Workly ("we," "our," or "us"), we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services. Please read this policy carefully. If you do not agree with the terms of this policy, please do not access the site.
+              At Can Hiring ("we," "our," or "us"), we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services. Please read this policy carefully. If you do not agree with the terms of this policy, please do not access the site.
             </p>
 
             <div className="space-y-4">
@@ -121,7 +121,7 @@ const PrivacyPolicy = () => {
                 If you have any questions about this Privacy Policy, please contact us at privacy@workly.com or by mail at:
               </p>
               <address className="not-italic text-muted-foreground">
-                Workly Inc.<br />
+                Can Hiring Inc.<br />
                 Attn: Privacy Officer<br />
                 123 Privacy Street<br />
                 Tech City, TC 12345<br />

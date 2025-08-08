@@ -19,13 +19,13 @@ const TermsAndConditions = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-muted-foreground">
-              Welcome to Workly ("we," "our," or "us"). These Terms and Conditions ("Terms") govern your use of our website and services. By accessing or using our platform, you agree to be bound by these Terms and our Privacy Policy.
+              Welcome to Can Hiring ("we," "our," or "us"). These Terms and Conditions ("Terms") govern your use of our website and services. By accessing or using our platform, you agree to be bound by these Terms and our Privacy Policy.
             </p>
 
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-foreground">2. Definitions</h2>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li><strong>"Platform"</strong> refers to the Workly website, mobile applications, and related services.</li>
+                <li><strong>"Platform"</strong> refers to the Can Hiring website, mobile applications, and related services.</li>
                 <li><strong>"User"</strong> means any individual or entity that accesses or uses our Platform.</li>
                 <li><strong>"Job Seeker"</strong> refers to Users seeking employment opportunities.</li>
                 <li><strong>"Employer"</strong> refers to Users posting job listings or seeking candidates.</li>
@@ -61,7 +61,7 @@ const TermsAndConditions = () => {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-foreground">5. Job Listings and Applications</h2>
               <p className="text-muted-foreground">
-                Employers are solely responsible for their job postings and the hiring process. Workly does not guarantee the accuracy of job listings or the availability of positions.
+                Employers are solely responsible for their job postings and the hiring process. Can Hiring does not guarantee the accuracy of job listings or the availability of positions.
               </p>
               <p className="text-muted-foreground">
                 Job Seekers are responsible for the accuracy of their applications and for conducting their own due diligence regarding potential employers.
@@ -71,7 +71,7 @@ const TermsAndConditions = () => {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-foreground">6. Intellectual Property</h2>
               <p className="text-muted-foreground">
-                All Content on the Platform, including text, graphics, logos, and software, is the property of Workly or its licensors and is protected by copyright and other intellectual property laws.
+                All Content on the Platform, including text, graphics, logos, and software, is the property of Can Hiring or its licensors and is protected by copyright and other intellectual property laws.
               </p>
               <p className="text-muted-foreground">
                 You may not reproduce, distribute, modify, or create derivative works of any Content without our prior written consent.
@@ -81,7 +81,7 @@ const TermsAndConditions = () => {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-foreground">7. Limitation of Liability</h2>
               <p className="text-muted-foreground">
-                To the maximum extent permitted by law, Workly shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly.
+                To the maximum extent permitted by law, Can Hiring shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly.
               </p>
             </div>
 

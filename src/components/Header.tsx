@@ -226,9 +226,9 @@ const Header = () => {
                 <nav className="flex flex-col h-full">
                   <div className="flex items-center mb-6 pb-4 border-b border-border">
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold">W</span>
+                      <span className="text-primary-foreground font-bold">C</span>
                     </div>
-                    <span className="ml-2 text-lg font-bold text-foreground">Workly</span>
+                    <span className="ml-2 text-lg font-bold text-foreground">Can Hiring</span>
                   </div>
 
                   {/* Mobile Navigation Links */}

@@ -12,12 +12,12 @@ const FAQ = () => {
       icon: <MessageSquare className="h-5 w-5 text-primary" />,
       questions: [
         {
-          question: "What is Workly?",
-          answer: "Workly is a comprehensive job portal that connects job seekers with employers. We provide a platform for finding jobs, managing applications, and connecting with potential employers."
+          question: "What is Can Hiring?",
+          answer: "Can Hiring is a comprehensive job portal that connects job seekers with employers. We provide a platform for finding jobs, managing applications, and connecting with potential employers."
         },
         {
-          question: "Is Workly free to use?",
-          answer: "Yes, Workly is completely free for job seekers. You can create a profile, search for jobs, and apply to as many positions as you like without any cost."
+          question: "Is Can Hiring free to use?",
+          answer: "Yes, Can Hiring is completely free for job seekers. You can create a profile, search for jobs, and apply to as many positions as you like without any cost."
         },
         {
           question: "How do I create an account?",

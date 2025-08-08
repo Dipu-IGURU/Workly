@@ -51,7 +51,7 @@ const AboutUs = () => {
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-4 text-blue-800 bg-blue-100">
-            About Workly
+            About Can Hiring
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Connecting Talent with Opportunity</h1>
           <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-8">
@@ -80,7 +80,7 @@ const AboutUs = () => {
           
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h3 className="text-2xl font-semibold mb-4">Why Choose Workly?</h3>
+              <h3 className="text-2xl font-semibold mb-4">Why Choose Can Hiring?</h3>
               <ul className="space-y-4">
                 {[
                   "Advanced matching algorithms for better job-candidate fit",
@@ -154,7 +154,7 @@ const AboutUs = () => {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto mb-8">
-            Join thousands of companies and candidates who have found success with Workly.
+            Join thousands of companies and candidates who have found success with Can Hiring.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">

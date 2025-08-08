@@ -10,12 +10,13 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
-            <div className="flex items-center mb-4">
+            <div className="flex items-center mb-2">
               <img 
                 src="/src/assets/canhiring.png" 
                 alt="Can Hiring Logo" 
-                className="h-10 w-auto" 
+                className="h-10 w-auto mr-2" 
               />
+              <span className="text-xl font-bold">Can Hiring</span>
             </div>
             <p className="text-background/70 mb-4">
               Call now: <span className="text-background font-medium">(319) 555-0115</span>
@@ -61,7 +62,7 @@ const Footer = () => {
         <div className="border-t border-background/20 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-background/70 text-sm">
-              © 2024 Workly. All Rights Reserved.
+              © 2024 Can Hiring. All Rights Reserved.
             </p>
             <div className="flex space-x-4 mt-4 md:mt-0">
               <Button variant="ghost" size="sm" className="text-background/70 hover:text-background hover:bg-background/10">
