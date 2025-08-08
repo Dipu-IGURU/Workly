@@ -12,27 +12,39 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
-const allowedOrigins = [
-  'http://localhost:8080',
-  'http://localhost:5173', // Vite dev server
-  'http://localhost:3000', // React dev server
-  'https://can-hiring.vercel.app',
-  'https://www.can-hiring.vercel.app',
-  'https://can-hiring.onrender.com',
-  'https://www.can-hiring.onrender.com'
-];
-
-app.use(cors({
+// CORS configuration
+const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Allow mobile apps or curl
+    // Allow all origins in development
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // In production, only allow specific origins
+    const allowedOrigins = [
+      'https://can-hiring.vercel.app',
+      'https://www.can-hiring.vercel.app',
+      'https://can-hiring.onrender.com',
+      'https://www.can-hiring.onrender.com'
+    ];
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      console.log('Blocked origin:', origin);
       return callback(new Error(msg), false);
     }
     return callback(null, true);
   },
-  credentials: true
-}));
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable preflight for all routes
 
 app.use(express.json());
 
