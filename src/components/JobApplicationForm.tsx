@@ -5,6 +5,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/config";
 import { X } from 'lucide-react';
 
 interface JobApplicationFormProps {
@@ -88,7 +89,7 @@ export function JobApplicationForm({
         formDataToSend.append('resume', formData.resume);
       }
 
-      const response = await fetch(`http://localhost:5001/api/jobs/${jobId}/apply`, {
+      const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/apply`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -8,13 +8,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    proxy: {
+    proxy: process.env.NODE_ENV === 'development' ? {
       '/api': {
-        target: 'http://localhost:5001', // Your backend server
+        target: process.env.VITE_API_URL || 'http://localhost:5001',
         changeOrigin: true,
-        
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
-    }
+    } : undefined,
   },
   plugins: [
     react(),

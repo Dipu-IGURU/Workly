@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '@/lib/api';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -68,7 +69,7 @@ export function EditJobForm() {
     const fetchJob = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5001/api/jobs/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -111,7 +112,7 @@ export function EditJobForm() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/jobs/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

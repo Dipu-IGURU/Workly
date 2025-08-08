@@ -1,7 +1,5 @@
-// Use environment variable if available, otherwise use production URL
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://can-hiring.onrender.com/api';
-// For local development, you can uncomment the line below
-// export const API_BASE_URL = 'http://localhost:5001/api';
+// API base URL from environment variables with fallback to production URL
+export const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://can-hiring.onrender.com'}/api`;
 
 export interface ProfileData {
   avatar?: string;

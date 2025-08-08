@@ -8,6 +8,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Briefcase, Calendar, Users, Pencil, Trash2, Send, X } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/config";
 
 interface Job {
   _id: string;
@@ -82,7 +83,7 @@ export function JobList({ jobs, onEdit, onDelete, showActions = true }: JobListP
     if (window.confirm('Are you sure you want to delete this job posting?')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5001/api/jobs/${jobId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`

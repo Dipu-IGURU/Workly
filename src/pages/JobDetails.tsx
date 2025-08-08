@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Briefcase, MapPin, Clock, DollarSign, Calendar, Building, Globe, Mail, ArrowLeft, Users } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/config";
 import { format } from 'date-fns';
 import { JobApplicationForm } from "@/components/JobApplicationForm";
 
@@ -63,7 +64,7 @@ export default function JobDetails() {
 
     const fetchJobDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/jobs/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/jobs/${id}`);
 
         if (!response.ok) throw new Error('Failed to fetch job');
         const data = await response.json();

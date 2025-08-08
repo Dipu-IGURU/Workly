@@ -16,6 +16,7 @@ import {
   Briefcase
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/config";
 // DashboardLayout is now handled by the router
 import { cn } from "@/lib/utils";
 
@@ -106,7 +107,7 @@ const UserDashboard: React.FC = () => {
           
           // Verify the token is still valid
           try {
-            const response = await fetch('http://localhost:5001/api/auth/verify-token', {
+            const response = await fetch(`${API_BASE_URL}/api/auth/verify-token`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             
@@ -137,7 +138,7 @@ const UserDashboard: React.FC = () => {
     const fetchUserProfile = async (token: string) => {
       try {
         console.log('Fetching fresh user profile...');
-        const response = await fetch('http://localhost:5001/api/auth/profile', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -196,7 +197,7 @@ const UserDashboard: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       
-      const response = await fetch('http://localhost:5001/api/profile/applied-jobs/stats', {
+      const response = await fetch(`${API_BASE_URL}/api/profile/applied-jobs/stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -217,7 +218,7 @@ const UserDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const response = await fetch('http://localhost:5001/api/profile/applied-jobs', {
+      const response = await fetch(`${API_BASE_URL}/api/profile/applied-jobs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -244,7 +245,7 @@ const UserDashboard: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       
-      const response = await fetch('http://localhost:5001/api/profile/interview-stats', {
+      const response = await fetch(`${API_BASE_URL}/api/profile/interview-stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -267,7 +268,7 @@ const UserDashboard: React.FC = () => {
       if (!token) return;
       
       // First get the current user's ID
-      const userResponse = await fetch('http://localhost:5001/api/auth/me', {
+      const userResponse = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -275,7 +276,7 @@ const UserDashboard: React.FC = () => {
       if (!userData.success || !userData.user) return;
       
       // Now fetch the profile view stats
-      const statsResponse = await fetch(`http://localhost:5001/api/profile/${userData.user._id}/view-stats`, {
+      const statsResponse = await fetch(`${API_BASE_URL}/api/profile/${userData.user._id}/view-stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

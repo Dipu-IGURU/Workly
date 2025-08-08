@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Briefcase, Bell, BellOff, Search, Filter, X } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,7 +42,7 @@ const JobAlerts: React.FC = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5001/api/jobs/public', {
+        const response = await fetch(`${API_BASE_URL}/jobs/public`, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

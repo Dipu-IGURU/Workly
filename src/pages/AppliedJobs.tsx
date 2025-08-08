@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { API_BASE_URL } from '@/lib/api';
 import { Badge } from "@/components/ui/badge";
 import { 
   Briefcase,
@@ -43,7 +44,7 @@ const AppliedJobs = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5001/api/profile/applied-jobs', {
+        const response = await fetch(`${API_BASE_URL}/profile/applied-jobs`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         

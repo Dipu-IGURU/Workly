@@ -1,26 +1,40 @@
-// Intercepts global fetch to rewrite localhost backend URLs to production
-// This allows legacy code that still calls 'http://localhost:5001' to work in production
-// without editing every single fetch statement.
-
-const API_HOST = import.meta.env.VITE_API_URL || 'https://can-hiring.onrender.com';
+// This interceptor ensures all API requests use the correct base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://can-hiring.onrender.com';
 
 // Keep a reference to the original fetch
 const originalFetch: typeof fetch = window.fetch.bind(window);
 
 // Replace the global fetch
 window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-  let newInput = input;
+  let url: string;
+  let options = { ...init };
 
-  // If the request is a string URL, perform replacement
+  // Convert input to URL string
   if (typeof input === 'string') {
-    newInput = input.replace('http://localhost:5001', API_HOST);
+    url = input;
+  } else if (input instanceof URL) {
+    url = input.toString();
   } else if (input instanceof Request) {
-    // If it's a Request object, clone and adjust the URL
-    const url = input.url.replace('http://localhost:5001', API_HOST);
-    newInput = new Request(url, input);
+    url = input.url;
+    options = { ...input, ...options };
+  } else {
+    return originalFetch(input, init);
   }
 
-  return originalFetch(newInput, init);
+  // Only process relative URLs or those that start with /api
+  if (url.startsWith('/') || url.startsWith('/api') || url.includes('localhost')) {
+    // Remove any leading slashes and localhost references
+    const path = url.replace(/^https?:\/\/[^/]+/, '').replace(/^\/+/, '');
+    
+    // Construct the full URL with the base URL
+    const fullUrl = `${API_BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+    
+    // Create new request with the full URL
+    return originalFetch(fullUrl, options);
+  }
+
+  // For external URLs, use the original fetch
+  return originalFetch(input, init);
 };
 
 export {};
